@@ -3,224 +3,311 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ares Kuaför - Randevu Sistemi</title>
+    <title>Ares Randevu Panel</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 450px;
-            background: var(--card-bg);
-            padding: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-radius: 12px;
-            box-sizing: border-box;
-            margin: 15px;
-        }
-
-        h2 {
-            text-align: center;
-            color: var(--primary-color);
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 15px;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background-color: #1a252f;
-        }
-
-        /* Gizleme Sınıfı */
-        .hidden {
-            display: none !important;
-        }
-
-        .error-msg {
-            color: #e74c3c;
-            font-size: 14px;
-            margin-top: 8px;
-            text-align: center;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f0f2f5; color: #1c1e21; padding: 15px; }
+        .container { max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2, h3 { color: #1877f2; text-align: center; }
+        
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 14px; color: #4b4f56; }
+        input, select, textarea, button { width: 100%; padding: 12px; border: 1px solid #dddfe2; border-radius: 10px; font-size: 15px; outline: none; }
+        textarea { resize: vertical; height: 70px; }
+        
+        button.btn-primary { background-color: #1877f2; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.btn-primary:hover { background-color: #166fe5; }
+        
+        .hidden { display: none !important; }
+        
+        /* Takvim ve Gün Gezinme Barları */
+        .date-navigator { display: flex; align-items: center; justify-content: space-between; background: #e7f3ff; padding: 10px 15px; border-radius: 12px; margin: 20px 0; }
+        .date-navigator button { width: auto; padding: 6px 14px; background: #1877f2; color: white; border: none; border-radius: 8px; font-weight: bold; }
+        .date-display { font-weight: bold; font-size: 16px; color: #1877f2; text-align: center; }
+        
+        /* Randevu Kartları */
+        .appointment-card { background: #fff; border: 1px solid #e4e6eb; border-left: 6px solid #1877f2; padding: 14px; border-radius: 10px; margin-bottom: 12px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .appointment-card.iptal { border-left-color: #fa3e3e; background: #fff5f5; opacity: 0.7; }
+        .time-badge { display: inline-block; background: #1877f2; color: white; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-bottom: 6px; }
+        .card-row { margin-bottom: 4px; font-size: 14px; }
+        .card-row strong { color: #050505; }
+        .note-box { background: #fff9c4; padding: 8px; border-radius: 6px; font-size: 13px; margin-top: 6px; border: 1px solid #fff59d; color: #574b00; }
+        
+        .btn-danger { background-color: #fa3e3e; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; margin-top: 8px; width: auto; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e4e6eb; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <!-- 1. GİRİŞ / ŞİFRE EKRANI -->
-    <div class="container" id="loginBox">
-        <h2>Ares Kuaför Giriş</h2>
-        <form onsubmit="checkPassword(event)">
-            <div class="form-group">
-                <label for="passwordInput">Giriş Şifresi</label>
-                <input type="password" id="passwordInput" placeholder="Şifrenizi girin" required>
-            </div>
-            <button type="submit">Giriş Yap</button>
-            <div id="loginError" class="error-msg hidden">Hatalı şifre! Lütfen tekrar deneyin.</div>
-        </form>
+<div class="container">
+    <h2>Ares Randevu Takvimi</h2>
+
+    <!-- GİRİŞ EKRANI (Supabase Üzerinden) -->
+    <div id="login-screen" style="margin-top: 20px;">
+        <div class="form-group">
+            <label>Kullanıcı Adı</label>
+            <input type="text" id="username" placeholder="Kullanıcı adı">
+        </div>
+        <div class="form-group">
+            <label>Şifre</label>
+            <input type="password" id="password" placeholder="Şifre">
+        </div>
+        <button class="btn-primary" onclick="girisYap()">Giriş Yap</button>
     </div>
 
-    <!-- 2. RANDEVU FORMU EKRANI (Şifre girilene kadar gizli) -->
-    <div class="container hidden" id="appointmentBox">
-        <h2>Ares Kuaför Randevu</h2>
-        <form id="appointmentForm" onsubmit="handleFormSubmit(event)">
-            <div class="form-group">
-                <label for="musteri_adi">Adınız Soyadınız</label>
-                <input type="text" id="musteri_adi" required placeholder="Örn: Ahmet Yılmaz">
-            </div>
+    <!-- PANEL EKRANI -->
+    <div id="app-screen" class="hidden">
+        <div class="header-bar">
+            <span id="user-info" style="font-weight: bold; color: #050505;"></span>
+            <button onclick="cikisYap()" style="width: auto; padding: 6px 12px; background: #fa3e3e; color:white; border:none; border-radius:6px;">Çıkış</button>
+        </div>
 
-            <div class="form-group">
-                <label for="musteri_tel">Telefon Numaranız</label>
-                <input type="tel" id="musteri_tel" required placeholder="05XX XXX XX XX">
+        <!-- YENİ RANDEVU FORMU -->
+        <details style="background: #f7f8fa; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #dddfe2;">
+            <summary style="font-weight: bold; cursor: pointer; color: #1877f2;">+ Yeni Randevu Oluştur</summary>
+            <div style="margin-top: 12px;">
+                <div class="form-group">
+                    <label>Müşteri Adı Soyadı</label>
+                    <input type="text" id="musteri_adi" placeholder="Örn: Ayşe Yılmaz">
+                </div>
+                <div class="form-group">
+                    <label>Telefon Numarası</label>
+                    <input type="text" id="telefon" placeholder="05xx xxx xx xx">
+                </div>
+                <div class="form-group">
+                    <label>Yapılacak İşlem</label>
+                    <input type="text" id="hizmet" placeholder="Örn: Mikro Kaynak, Boya">
+                </div>
+                <div class="form-group">
+                    <label>İşlemi Yapacak Personel</label>
+                    <input type="text" id="islem_yapan" placeholder="Örn: Emre, Ahmet vb.">
+                </div>
+                <div class="form-group">
+                    <label>Tarih ve Saat</label>
+                    <input type="datetime-local" id="tarih_saat">
+                </div>
+                <div class="form-group">
+                    <label>Özel Notlar / Açıklama</label>
+                    <textarea id="notlar" placeholder="Örn: 150 gram 55 cm mikro kaynak takılacak, kapora alındı."></textarea>
+                </div>
+                <button class="btn-primary" onclick="randevuEkle()">Randevuyu Kaydet</button>
             </div>
+        </details>
 
-            <div class="form-group">
-                <label for="personel_adi">Personel Seçimi</label>
-                <select id="personel_adi" required>
-                    <option value="">Personel Seçin</option>
-                    <option value="Ali">Ali</option>
-                    <option value="Kenan">Kenan</option>
-                    <option value="Emre">Emre</option>
-                    <option value="Tuğba">Tuğba</option>
-                </select>
+        <!-- TAKVİM GÜN GEZİNTİSİ -->
+        <div class="date-navigator">
+            <button onclick="gunDegistir(-1)">&lt; Önceki Gün</button>
+            <div class="date-display">
+                <input type="date" id="secili-tarih-input" onchange="tarihSecildi()" style="padding:4px; font-weight:bold; border:none; background:transparent; color:#1877f2; text-align:center;">
             </div>
+            <button onclick="gunDegistir(1)">Sonraki Gün &gt;</button>
+        </div>
 
-            <div class="form-group">
-                <label for="islem">İşlem / Hizmet</label>
-                <select id="islem" required>
-                    <option value="">İşlem Seçin</option>
-                    <option value="Saç Kesimi">Saç Kesimi</option>
-                    <option value="Mikro Kaynak">Mikro Kaynak</option>
-                    <option value="Hayalet Kaynak">Hayalet Kaynak</option>
-                    <option value="Boya / Röfle">Boya / Röfle</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="tarih">Randevu Tarihi</label>
-                <input type="date" id="tarih" required>
-            </div>
-
-            <div class="form-group">
-                <label for="saat">Randevu Saati</label>
-                <input type="time" id="saat" required>
-            </div>
-
-            <button type="submit">Randevu Oluştur</button>
-        </form>
+        <h3 style="text-align: left; font-size: 16px; margin-bottom: 10px; color: #4b4f56;">Günün Randevuları</h3>
+        <div id="randevu-listesi">
+            <!-- Randevular buraya yüklenecek -->
+        </div>
     </div>
+</div>
 
-    <script>
-        // Giriş Şifresi (Buradan istediğiniz şifreyi belirleyebilirsiniz)
-        const DOGRU_SIFRE = "1234";
+<script>
+    const SUPABASE_URL = 'https://pomcbxgouhfvpdgwyepq.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_kpfQg9YJAh28CTTJxKgsEw_JP3Nqz-f';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let aktifPersonel = null;
+    let seciliTarih = new Date();
 
-        // Şifre Kontrol Fonksiyonu
-        function checkPassword(event) {
-            event.preventDefault();
-            const girilenSifre = document.getElementById('passwordInput').value;
-            const errorElement = document.getElementById('loginError');
+    // Sayfa açıldığında bugünün tarihini ayarla
+    document.getElementById('secili-tarih-input').value = seciliTarih.toISOString().split('T')[0];
 
-            if (girilenSifre === DOGRU_SIFRE) {
-                document.getElementById('loginBox').classList.add('hidden');
-                document.getElementById('appointmentBox').classList.remove('hidden');
+    async function girisYap() {
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value.trim();
+
+        if(!u || !p) { alert('Lütfen kullanıcı adı ve şifre girin.'); return; }
+
+        const { data, error } = await supabaseClient
+            .from('personeller')
+            .select('*')
+            .eq('kullanici_adi', u)
+            .eq('sifre', p);
+
+        if (error || !data || data.length === 0) {
+            alert('Hatalı kullanıcı adı veya şifre!');
+        } else {
+            aktifPersonel = data[0];
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('user-info').innerText = `Giriş Yapan: ${aktifPersonel.ad_soyad}`;
+            randevulariGetir();
+        }
+    }
+
+    function cikisYap() {
+        aktifPersonel = null;
+        document.getElementById('app-screen').classList.add('hidden');
+        document.getElementById('login-screen').classList.remove('hidden');
+    }
+
+    function gunDegistir(gunSayisi) {
+        seciliTarih.setDate(seciliTarih.getDate() + gunSayisi);
+        document.getElementById('secili-tarih-input').value = seciliTarih.toISOString().split('T')[0];
+        randevulariGetir();
+    }
+
+    function tarihSecildi() {
+        const val = document.getElementById('secili-tarih-input').value;
+        if(val) {
+            seciliTarih = new Date(val);
+            randevulariGetir();
+        }
+    }
+
+    // Telegram Bildirim Gönderme Fonksiyonu
+    async function sendTelegramNotification(data) {
+        const TELEGRAM_BOT_TOKEN = '8932934663:AAEqhcs4JhxlxJyIA0tA1vnGBSDjlQ0f3CE';
+        const TELEGRAM_CHAT_ID = '-5429836951';
+
+        const tarihObje = new Date(data.tarih_saat);
+        const tarihStr = tarihObje.toLocaleDateString('tr-TR');
+        const saatStr = tarihObje.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+        const message = "🔔 *Yeni Randevu Talebi!*\n\n" +
+                        "👤 *Müşteri:* " + data.musteri_adi + "\n" +
+                        "📞 *Telefon:* " + (data.telefon || 'Belirtilmedi') + "\n" +
+                        "💇‍♂️ *Personel:* " + (data.islem_yapan_personel || 'Belirtilmedi') + "\n" +
+                        "✂️ *İşlem:* " + data.hizmet + "\n" +
+                        "📅 *Tarih:* " + tarihStr + "\n" +
+                        "⏰ *Saat:* " + saatStr + "\n" +
+                        (data.notlar ? "📝 *Not:* " + data.notlar + "\n" : "") +
+                        "\n📌 *Ekleyen:* " + (aktifPersonel ? aktifPersonel.ad_soyad : 'Sistem');
+
+        try {
+            await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            });
+        } catch (error) {
+            console.error('Telegram gönderim hatası:', error);
+        }
+    }
+
+    async function randevuEkle() {
+        const musteri_adi = document.getElementById('musteri_adi').value.trim();
+        const telefon = document.getElementById('telefon').value.trim();
+        const hizmet = document.getElementById('hizmet').value.trim();
+        const islem_yapan_personel = document.getElementById('islem_yapan').value.trim();
+        const tarih_saat = document.getElementById('tarih_saat').value;
+        const notlar = document.getElementById('notlar').value.trim();
+
+        if(!musteri_adi || !hizmet || !tarih_saat) {
+            alert('Müşteri adı, yapılacak işlem ve tarih/saat zorunludur.');
+            return;
+        }
+
+        const yeniRandevu = {
+            musteri_adi, 
+            telefon, 
+            hizmet, 
+            islem_yapan_personel,
+            tarih_saat, 
+            notlar,
+            personel_id: aktifPersonel.id, 
+            durum: 'Aktif'
+        };
+
+        const { error } = await supabaseClient.from('randevular').insert([yeniRandevu]);
+
+        if (error) {
+            alert('Hata oluştu: ' + error.message);
+        } else {
+            // Randevu veritabanına eklenince Telegram'a bildirim at
+            await sendTelegramNotification(yeniRandevu);
+
+            alert('Randevu başarıyla eklendi ve Telegram grubuna iletildi!');
+            document.getElementById('musteri_adi').value = '';
+            document.getElementById('telefon').value = '';
+            document.getElementById('hizmet').value = '';
+            document.getElementById('islem_yapan').value = '';
+            document.getElementById('tarih_saat').value = '';
+            document.getElementById('notlar').value = '';
+            
+            // Eklenen randevunun tarihine odaklan
+            seciliTarih = new Date(tarih_saat);
+            document.getElementById('secili-tarih-input').value = seciliTarih.toISOString().split('T')[0];
+            randevulariGetir();
+        }
+    }
+
+    async function randevulariGetir() {
+        const baslangic = new Date(seciliTarih);
+        baslangic.setHours(0,0,0,0);
+        
+        const bitis = new Date(seciliTarih);
+        bitis.setHours(23,59,59,999);
+
+        const { data, error } = await supabaseClient
+            .from('randevular')
+            .select('*, personeller(ad_soyad)')
+            .gte('tarih_saat', baslangic.toISOString())
+            .lte('tarih_saat', bitis.toISOString())
+            .order('tarih_saat', { ascending: true });
+
+        const listeDiv = document.getElementById('randevu-listesi');
+        listeDiv.innerHTML = '';
+
+        if (error) {
+            listeDiv.innerHTML = '<p style="color:red;">Randevular yüklenirken hata oluştu.</p>';
+            return;
+        }
+
+        if (data.length === 0) {
+            listeDiv.innerHTML = '<p style="color:#777; text-align:center; padding: 20px 0;">Bu seçili tarihte kayıtlı randevu bulunmuyor.</p>';
+            return;
+        }
+
+        data.forEach(r => {
+            const saatStr = new Date(r.tarih_saat).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            const ekleyen = r.personeller ? r.personeller.ad_soyad : 'Bilinmiyor';
+            const iptalMi = r.durum === 'İptal';
+
+            const card = document.createElement('div');
+            card.className = `appointment-card ${iptalMi ? 'iptal' : ''}`;
+            card.innerHTML = `
+                <span class="time-badge">⏰ Saat: ${saatStr}</span>
+                <div class="card-row"><strong>Müşteri:</strong> ${r.musteri_adi} ${r.telefon ? '(' + r.telefon + ')' : ''}</div>
+                <div class="card-row"><strong>İşlem:</strong> ${r.hizmet}</div>
+                <div class="card-row"><strong>İşlemi Yapacak:</strong> ${r.islem_yapan_personel || 'Belirtilmedi'}</div>
+                ${r.notlar ? `<div class="note-box">📝 <strong>Not:</strong> ${r.notlar}</div>` : ''}
+                <div style="font-size:11px; color:#888; margin-top:6px;">Sisteme Ekleyen: ${ekleyen}</div>
+                ${!iptalMi ? `<button class="btn-danger" onclick="randevuIptal('${r.id}')">Randevuyu İptal Et</button>` : '<span style="color:red; font-weight:bold; font-size:13px; display:block; margin-top:5px;">İptal Edildi</span>'}
+            `;
+            listeDiv.appendChild(card);
+        });
+    }
+
+    async function randevuIptal(id) {
+        if(confirm('Bu randevuyu iptal etmek istediğinize emin misiniz?')) {
+            const { error } = await supabaseClient
+                .from('randevular')
+                .update({ durum: 'İptal' })
+                .eq('id', id);
+
+            if(error) {
+                alert('İptal edilirken hata oluştu.');
             } else {
-                errorElement.classList.remove('hidden');
+                randevulariGetir();
             }
         }
+    }
+</script>
 
-        // Telegram Bildirim Fonksiyonu
-        async function sendTelegramNotification(data) {
-            const TELEGRAM_BOT_TOKEN = '8932934663:AAEqhcs4JhxlxJyIA0tA1vnGBSDjlQ0f3CE';
-            const TELEGRAM_CHAT_ID = '-5429836951';
-
-            const message = "🔔 *Yeni Randevu Talebi!*\n\n" +
-                            "👤 *Müşteri:* " + data.musteri_adi + "\n" +
-                            "📞 *Telefon:* " + data.musteri_tel + "\n" +
-                            "💇‍♂️ *Personel:* " + data.personel_adi + "\n" +
-                            "✂️ *İşlem:* " + data.islem + "\n" +
-                            "📅 *Tarih:* " + data.tarih + "\n" +
-                            "⏰ *Saat:* " + data.saat;
-
-            try {
-                await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: TELEGRAM_CHAT_ID,
-                        text: message,
-                        parse_mode: 'Markdown'
-                    })
-                });
-            } catch (error) {
-                console.error('Telegram gönderim hatası:', error);
-            }
-        }
-
-        // Form Gönderim İşleyicisi
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-
-            const appointmentData = {
-                musteri_adi: document.getElementById('musteri_adi').value,
-                musteri_tel: document.getElementById('musteri_tel').value,
-                personel_adi: document.getElementById('personel_adi').value,
-                islem: document.getElementById('islem').value,
-                tarih: document.getElementById('tarih').value,
-                saat: document.getElementById('saat').value
-            };
-
-            await sendTelegramNotification(appointmentData);
-
-            alert('Randevunuz başarıyla oluşturuldu ve ekibe iletildi!');
-            document.getElementById('appointmentForm').reset();
-        }
-    </script>
 </body>
 </html>
