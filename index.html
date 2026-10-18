@@ -1,39 +1,40 @@
+<script>
 // Telegram Bildirim Fonksiyonu
-async function sendTelegramNotification(appointmentData) {
+async function sendTelegramNotification(data) {
   const TELEGRAM_BOT_TOKEN = '8932934663:AAEqhcs4JhxlxJyIA0tA1vnGBSDjlQ0f3CE';
   const TELEGRAM_CHAT_ID = '-5429836951';
+
+  // Verilerin boş gelme ihtimaline karşı kontrol
+  const musteriAdi = data?.musteri_adi || data?.adsoyad || data?.ad || 'Belirtilmedi';
+  const musteriTel = data?.musteri_tel || data?.telefon || data?.tel || 'Belirtilmedi';
+  const personelAdi = data?.personel_adi || data?.personel || 'Belirtilmedi';
+  const islem = data?.islem || data?.hizmet || 'Belirtilmedi';
+  const tarih = data?.tarih || 'Belirtilmedi';
+  const saat = data?.saat || 'Belirtilmedi';
 
   const message = `
 🔔 *Yeni Randevu Talebi!*
 
-👤 *Müşteri:* ${appointmentData.musteri_adi}
-📞 *Telefon:* ${appointmentData.musteri_tel}
-💇‍♂️ *Personel:* ${appointmentData.personel_adi}
-✂️ *İşlem:* ${appointmentData.islem}
-📅 *Tarih:* ${appointmentData.tarih}
-⏰ *Saat:* ${appointmentData.saat}
+👤 *Müşteri:* ${musteriAdi}
+📞 *Telefon:* ${musteriTel}
+💇‍♂️ *Personel:* ${personelAdi}
+✂️ *İşlem:* ${islem}
+📅 *Tarih:* ${tarih}
+⏰ *Saat:* ${saat}
   `.trim();
 
   try {
-    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: TELEGRAM_CHAT_ID,
         text: message,
         parse_mode: 'Markdown'
       })
     });
-
-    if (response.ok) {
-      alert('Randevunuz başarıyla alındı ve ekibe iletildi!');
-    } else {
-      console.error('Telegram bildirim hatası:', await response.text());
-      alert('Randevu kaydedildi ancak bildirim gönderilemedi.');
-    }
   } catch (error) {
-    console.error('Bağlantı hatası:', error);
+    console.error('Telegram gönderim hatası:', error);
   }
 }
+</script>
