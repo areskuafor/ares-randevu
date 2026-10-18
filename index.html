@@ -12,6 +12,7 @@
             --card-bg: #ffffff;
             --primary: #0f172a;
             --accent: #2563eb;
+            --whatsapp: #25D366;
             --border: #e2e8f0;
             --text-main: #1e293b;
             --text-muted: #64748b;
@@ -25,11 +26,10 @@
         header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
         .user-badge { font-size: 13px; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; }
 
-        /* Tarih ve Kontrol Barları */
+        /* Kontrol Barları */
         .top-controls { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .date-picker-wrap { display: flex; align-items: center; gap: 8px; }
         .date-picker-wrap input { border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px; font-weight: 600; color: var(--text-main); font-size: 14px; outline: none; }
-        .btn-add { background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .btn-add { background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
 
         /* Giriş Ekranı */
         #login-screen { position: fixed; inset: 0; background: var(--primary); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 20px; }
@@ -37,24 +37,24 @@
         .login-box h2 { font-size: 22px; text-align: center; margin-bottom: 20px; color: var(--primary); }
         .field { margin-bottom: 14px; }
         .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
-        .field input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; }
+        .field input, .field select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; }
         .btn-login { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px; }
 
-        /* Saatlik Çizelge / Grid Alanı */
+        /* Çizelge */
         .timeline-container { flex: 1; overflow-y: auto; overflow-x: auto; position: relative; display: flex; background: var(--card-bg); }
         .time-column { width: 60px; min-width: 60px; border-right: 1px solid var(--border); background: #f1f5f9; z-index: 2; }
         .time-slot-label { height: 70px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; }
         
         .grid-content { flex: 1; min-width: 300px; position: relative; }
-        .grid-row { height: 70px; border-bottom: 1px solid var(--border); box-sizing: border-border-box; }
+        .grid-row { height: 70px; border-bottom: 1px solid var(--border); }
 
-        /* Randevu Kartları (Çizelge Üzerinde) */
-        .app-event { position: absolute; left: 8px; right: 8px; background: #eff6ff; border-left: 4px solid var(--accent); border-radius: 6px; padding: 6px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.06); cursor: pointer; overflow: hidden; transition: transform 0.1s; }
-        .app-event:active { transform: scale(0.98); }
+        /* Randevu Kartları */
+        .app-event { position: absolute; left: 8px; right: 8px; background: #eff6ff; border-left: 4px solid var(--accent); border-radius: 6px; padding: 6px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.06); cursor: pointer; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
         .app-event .title { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .app-event .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .btn-wa-card { background: var(--whatsapp); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 4px; width: fit-content; display: flex; align-items: center; gap: 4px; }
 
-        /* Pop-up (Modal) Ekranı */
+        /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .modal-card { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 20px; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.25s ease-out; }
@@ -110,7 +110,7 @@
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 id="modal-title">Yeni Randevu Oluştur</h3>
+                <h3>Yeni Randevu Oluştur</h3>
                 <button class="close-btn" onclick="modalKapat()">&times;</button>
             </div>
             
@@ -128,7 +128,9 @@
             </div>
             <div class="field">
                 <label>İşlemi Yapacak Personel</label>
-                <input type="text" id="m_personel" placeholder="Örn: Emre, Ahmet">
+                <select id="m_personel_select">
+                    <!-- Personeller dinamik yüklenecek -->
+                </select>
             </div>
             <div style="display: flex; gap: 10px;">
                 <div class="field" style="flex:1;">
@@ -151,7 +153,7 @@
                 <input type="text" id="m_not" placeholder="Örn: 150gr mikro kaynak, kapora alındı.">
             </div>
 
-            <button class="btn-login" style="margin-top:15px;" onclick="randevuKaydet()">Randevuyu Takvime Ekle</button>
+            <button class="btn-login" style="margin-top:15px;" onclick="randevuKaydet()">Randevuyu Kaydet & Tüm Ekibe Bildir</button>
         </div>
     </div>
 
@@ -161,10 +163,10 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let aktifUser = null;
-    const SAAT_BASLANGIC = 8; // 08:00
-    const SAAT_BITIS = 21;    // 21:00
+    let personelListesi = [];
+    const SAAT_BASLANGIC = 8;
+    const SAAT_BITIS = 21;
 
-    // Sayfa Açılış Ayarları
     document.getElementById('selected-date').value = new Date().toISOString().split('T')[0];
     cizelgeOlustur();
 
@@ -176,7 +178,6 @@
 
         for (let i = SAAT_BASLANGIC; i <= SAAT_BITIS; i++) {
             const timeStr = (i < 10 ? '0' + i : i) + ':00';
-            
             const label = document.createElement('div');
             label.className = 'time-slot-label';
             label.innerText = timeStr;
@@ -206,23 +207,34 @@
             aktifUser = data[0];
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('user-display').innerText = aktifUser.ad_soyad;
+            personelleriYukle();
             randevulariYukle();
         }
     }
 
-    function modalAc() {
-        document.getElementById('modal-overlay').classList.add('active');
+    async function personelleriYukle() {
+        const { data } = await supabaseClient.from('personeller').select('*');
+        if(data) {
+            personelListesi = data;
+            const select = document.getElementById('m_personel_select');
+            select.innerHTML = '';
+            data.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.ad_soyad;
+                opt.innerText = p.ad_soyad;
+                select.appendChild(opt);
+            });
+        }
     }
 
-    function modalKapat() {
-        document.getElementById('modal-overlay').classList.remove('active');
-    }
+    function modalAc() { document.getElementById('modal-overlay').classList.add('active'); }
+    function modalKapat() { document.getElementById('modal-overlay').classList.remove('active'); }
 
     async function randevuKaydet() {
         const musteri_adi = document.getElementById('m_adi').value.trim();
         const telefon = document.getElementById('m_tel').value.trim();
         const hizmet = document.getElementById('m_hizmet').value.trim();
-        const islem_yapan_personel = document.getElementById('m_personel').value.trim();
+        const islem_yapan_personel = document.getElementById('m_personel_select').value;
         const saat = document.getElementById('m_saat').value;
         const sure = parseInt(document.getElementById('m_sure').value);
         const notlar = document.getElementById('m_not').value.trim();
@@ -251,7 +263,11 @@
             alert('Hata: ' + error.message);
         } else {
             modalKapat();
-            // Formu Temizle
+            
+            // Tüm Ekibe WhatsApp Bildirimi Gönder
+            tumEkibeWA(tarih, saat, musteri_adi, hizmet, islem_yapan_personel, notlar);
+
+            // Form Temizle
             document.getElementById('m_adi').value = '';
             document.getElementById('m_tel').value = '';
             document.getElementById('m_hizmet').value = '';
@@ -260,12 +276,22 @@
         }
     }
 
+    function tumEkibeWA(tarih, saat, musteri, hizmet, personel, notlar) {
+        const mesaj = `📢 *YENİ RANDEVU!*\n📅 Tarih/Saat: ${tarih} ${saat}\n👤 Müşteri: ${musteri}\n✂️ İşlem: ${hizmet}\n👨‍🦰 İlgilenecek Personel: ${personel}${notlar ? '\n📝 Not: ' + notlar : ''}`;
+        
+        personelListesi.forEach(p => {
+            if(p.telefon) {
+                window.open(`https://wa.me/${p.telefon}?text=${encodeURIComponent(mesaj)}`, '_blank');
+            }
+        });
+    }
+
     async function randevulariYukle() {
         const seciliTarih = document.getElementById('selected-date').value;
         const baslangic = `${seciliTarih}T00:00:00`;
         const bitis = `${seciliTarih}T23:59:59`;
 
-        const { data, error } = await supabaseClient
+        const { data } = await supabaseClient
             .from('randevular')
             .select('*')
             .gte('tarih_saat', baslangic)
@@ -275,14 +301,13 @@
         const layer = document.getElementById('events-layer');
         layer.innerHTML = '';
 
-        if(error || !data) return;
+        if(!data) return;
 
         data.forEach(r => {
             const dateObj = new Date(r.tarih_saat);
             const saat = dateObj.getHours();
             const dakika = dateObj.getMinutes();
 
-            // Pozisyon Hesaplama (Her saat 70px yüksekliğinde)
             const topPx = ((saat - SAAT_BASLANGIC) * 70) + ((dakika / 60) * 70);
             const heightPx = ((r.islem_suresi_dk || 60) / 60) * 70;
 
@@ -295,8 +320,11 @@
                 const saatFormat = (saat < 10 ? '0'+saat : saat) + ':' + (dakika < 10 ? '0'+dakika : dakika);
 
                 el.innerHTML = `
-                    <div class="title">${saatFormat} - ${r.musteri_adi}</div>
-                    <div class="sub"><b>İşlem:</b> ${r.hizmet} ${r.islem_yapan_personel ? ' | 👤 ' + r.islem_yapan_personel : ''}</div>
+                    <div>
+                        <div class="title">${saatFormat} - ${r.musteri_adi}</div>
+                        <div class="sub"><b>İşlem:</b> ${r.hizmet} ${r.islem_yapan_personel ? ' | 👤 ' + r.islem_yapan_personel : ''}</div>
+                    </div>
+                    <button class="btn-wa-card" onclick="event.stopPropagation(); tumEkibeWA('${seciliTarih}', '${saatFormat}', '${r.musteri_adi}', '${r.hizmet}', '${r.islem_yapan_personel || ''}', '${r.notlar || ''}')">📢 Ekibe WhatsApp Gönder</button>
                 `;
 
                 el.onclick = () => {
