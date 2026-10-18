@@ -78,11 +78,11 @@
             <h2>Ares Kuaför Pro</h2>
             <div class="field">
                 <label>Kullanıcı Adı</label>
-                <input type="text" id="username" placeholder="">
+                <input type="text" id="username" placeholder="" autocapitalize="words" autocorrect="off">
             </div>
             <div class="field">
                 <label>Şifre</label>
-                <input type="password" id="password" placeholder="">
+                <input type="password" id="password" placeholder="" autocapitalize="words" autocorrect="off">
             </div>
             <button class="btn-login" onclick="girisYap()">Sisteme Giriş Yap</button>
         </div>
@@ -233,10 +233,11 @@
             document.getElementById('m_hizmet').value = randevuData.hizmet || '';
             document.getElementById('m_personel_select').value = randevuData.islem_yapan_personel || '';
             
-            const dateObj = new Date(randevuData.tarih_saat);
-            const saat = (dateObj.getHours() < 10 ? '0' : '') + dateObj.getHours();
-            const dak = (dateObj.getMinutes() < 10 ? '0' : '') + dateObj.getMinutes();
-            document.getElementById('m_saat').value = `${saat}:${dak}`;
+            // Saat bilgisini metin parçalama ile alma (UTC kaymasını önler)
+            const saatParcasi = randevuData.tarih_saat.split('T')[1] || randevuData.tarih_saat.split(' ')[1];
+            if(saatParcasi) {
+                document.getElementById('m_saat').value = saatParcasi.substring(0, 5);
+            }
             document.getElementById('m_not').value = randevuData.notlar || '';
         } else {
             document.getElementById('modal-title').innerText = "Yeni Randevu Oluştur";
@@ -379,9 +380,13 @@
         mevcutRandevular = data;
 
         data.forEach(r => {
-            const dateObj = new Date(r.tarih_saat);
-            const saat = dateObj.getHours();
-            const dakika = dateObj.getMinutes();
+            // Metin parçalama yöntemi ile doğrudan saat ve dakikayı alıyoruz (UTC +3 kaymasını engeller)
+            const saatString = r.tarih_saat.split('T')[1] || r.tarih_saat.split(' ')[1];
+            if (!saatString) return;
+
+            const [saatStr, dakStr] = saatString.split(':');
+            const saat = parseInt(saatStr, 10);
+            const dakika = parseInt(dakStr, 10);
 
             const topPx = ((saat - SAAT_BASLANGIC) * 70) + ((dakika / 60) * 70);
             const heightPx = 65;
