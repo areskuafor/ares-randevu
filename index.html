@@ -2,131 +2,197 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ares Randevu Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ares Kuaför Pro Takvim</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: #f0f2f5; color: #1c1e21; padding: 15px; }
-        .container { max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        h2, h3 { color: #1877f2; text-align: center; }
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* Üst Bar */
+        header { background: var(--primary); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; }
+        header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+        .user-badge { font-size: 13px; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; }
+
+        /* Tarih ve Kontrol Barları */
+        .top-controls { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .date-picker-wrap { display: flex; align-items: center; gap: 8px; }
+        .date-picker-wrap input { border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px; font-weight: 600; color: var(--text-main); font-size: 14px; outline: none; }
+        .btn-add { background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+        /* Giriş Ekranı */
+        #login-screen { position: fixed; inset: 0; background: var(--primary); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .login-box { background: white; padding: 28px; border-radius: 16px; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .login-box h2 { font-size: 22px; text-align: center; margin-bottom: 20px; color: var(--primary); }
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+        .field input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; }
+        .btn-login { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px; }
+
+        /* Saatlik Çizelge / Grid Alanı */
+        .timeline-container { flex: 1; overflow-y: auto; overflow-x: auto; position: relative; display: flex; background: var(--card-bg); }
+        .time-column { width: 60px; min-width: 60px; border-right: 1px solid var(--border); background: #f1f5f9; z-index: 2; }
+        .time-slot-label { height: 70px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; }
         
-        .form-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 14px; color: #4b4f56; }
-        input, select, textarea, button { width: 100%; padding: 12px; border: 1px solid #dddfe2; border-radius: 10px; font-size: 15px; outline: none; }
-        textarea { resize: vertical; height: 70px; }
-        
-        button.btn-primary { background-color: #1877f2; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button.btn-primary:hover { background-color: #166fe5; }
-        
+        .grid-content { flex: 1; min-width: 300px; position: relative; }
+        .grid-row { height: 70px; border-bottom: 1px solid var(--border); box-sizing: border-border-box; }
+
+        /* Randevu Kartları (Çizelge Üzerinde) */
+        .app-event { position: absolute; left: 8px; right: 8px; background: #eff6ff; border-left: 4px solid var(--accent); border-radius: 6px; padding: 6px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.06); cursor: pointer; overflow: hidden; transition: transform 0.1s; }
+        .app-event:active { transform: scale(0.98); }
+        .app-event .title { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .app-event .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Pop-up (Modal) Ekranı */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-card { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 20px; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.25s ease-out; }
+        .modal-overlay.active .modal-card { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .modal-header h3 { font-size: 17px; font-weight: 700; }
+        .close-btn { background: none; border: none; font-size: 20px; font-weight: bold; color: var(--text-muted); cursor: pointer; }
+
         .hidden { display: none !important; }
-        
-        /* Takvim ve Gün Gezinme Barları */
-        .date-navigator { display: flex; align-items: center; justify-content: space-between; background: #e7f3ff; padding: 10px 15px; border-radius: 12px; margin: 20px 0; }
-        .date-navigator button { width: auto; padding: 6px 14px; background: #1877f2; color: white; border: none; border-radius: 8px; font-weight: bold; }
-        .date-display { font-weight: bold; font-size: 16px; color: #1877f2; text-align: center; }
-        
-        /* Randevu Kartları */
-        .appointment-card { background: #fff; border: 1px solid #e4e6eb; border-left: 6px solid #1877f2; padding: 14px; border-radius: 10px; margin-bottom: 12px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .appointment-card.iptal { border-left-color: #fa3e3e; background: #fff5f5; opacity: 0.7; }
-        .time-badge { display: inline-block; background: #1877f2; color: white; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-bottom: 6px; }
-        .card-row { margin-bottom: 4px; font-size: 14px; }
-        .card-row strong { color: #050505; }
-        .note-box { background: #fff9c4; padding: 8px; border-radius: 6px; font-size: 13px; margin-top: 6px; border: 1px solid #fff59d; color: #574b00; }
-        
-        .btn-danger { background-color: #fa3e3e; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; margin-top: 8px; width: auto; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e4e6eb; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Ares Randevu Takvimi</h2>
-
     <!-- GİRİŞ EKRANI -->
-    <div id="login-screen" style="margin-top: 20px;">
-        <div class="form-group">
-            <label>Kullanıcı Adı</label>
-            <input type="text" id="username" placeholder="Kullanıcı adı">
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>Ares Kuaför Pro</h2>
+            <div class="field">
+                <label>Kullanıcı Adı</label>
+                <input type="text" id="username" placeholder="admin">
+            </div>
+            <div class="field">
+                <label>Şifre</label>
+                <input type="password" id="password" placeholder="123">
+            </div>
+            <button class="btn-login" onclick="girisYap()">Sisteme Giriş Yap</button>
         </div>
-        <div class="form-group">
-            <label>Şifre</label>
-            <input type="password" id="password" placeholder="Şifre">
-        </div>
-        <button class="btn-primary" onclick="girisYap()">Giriş Yap</button>
     </div>
 
-    <!-- PANEL EKRANI -->
-    <div id="app-screen" class="hidden">
-        <div class="header-bar">
-            <span id="user-info" style="font-weight: bold; color: #050505;"></span>
-            <button onclick="cikisYap()" style="width: auto; padding: 6px 12px; background: #fa3e3e; color:white; border:none; border-radius:6px;">Çıkış</button>
+    <!-- ANA PANEL -->
+    <header>
+        <h1>Ares Kuaför</h1>
+        <div class="user-badge" id="user-display">Personel</div>
+    </header>
+
+    <div class="top-controls">
+        <div class="date-picker-wrap">
+            <input type="date" id="selected-date" onchange="randevulariYukle()">
         </div>
+        <button class="btn-add" onclick="modalAc()">+ Yeni Randevu</button>
+    </div>
 
-        <!-- YENİ RANDEVU FORMU -->
-        <details style="background: #f7f8fa; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #dddfe2;">
-            <summary style="font-weight: bold; cursor: pointer; color: #1877f2;">+ Yeni Randevu Oluştur</summary>
-            <div style="margin-top: 12px;">
-                <div class="form-group">
-                    <label>Müşteri Adı Soyadı</label>
-                    <input type="text" id="musteri_adi" placeholder="Örn: Ayşe Yılmaz">
-                </div>
-                <div class="form-group">
-                    <label>Telefon Numarası</label>
-                    <input type="text" id="telefon" placeholder="05xx xxx xx xx">
-                </div>
-                <div class="form-group">
-                    <label>Yapılacak İşlem</label>
-                    <input type="text" id="hizmet" placeholder="Örn: Mikro Kaynak, Boya">
-                </div>
-                <div class="form-group">
-                    <label>İşlemi Yapacak Personel</label>
-                    <input type="text" id="islem_yapan" placeholder="Örn: Emre, Ahmet vb.">
-                </div>
-                <div class="form-group">
-                    <label>Tarih ve Saat</label>
-                    <input type="datetime-local" id="tarih_saat">
-                </div>
-                <div class="form-group">
-                    <label>Özel Notlar / Açıklama</label>
-                    <textarea id="notlar" placeholder="Örn: 150 gram 55 cm mikro kaynak takılacak, kapora alındı."></textarea>
-                </div>
-                <button class="btn-primary" onclick="randevuEkle()">Randevuyu Kaydet</button>
-            </div>
-        </details>
-
-        <!-- TAKVİM GÜN GEZİNTİSİ -->
-        <div class="date-navigator">
-            <button onclick="gunDegistir(-1)">&lt; Önceki Gün</button>
-            <div class="date-display">
-                <input type="date" id="secili-tarih-input" onchange="tarihSecildi()" style="padding:4px; font-weight:bold; border:none; background:transparent; color:#1877f2; text-align:center;">
-            </div>
-            <button onclick="gunDegistir(1)">Sonraki Gün &gt;</button>
-        </div>
-
-        <h3 style="text-align: left; font-size: 16px; margin-bottom: 10px; color: #4b4f56;">Günün Randevuları</h3>
-        <div id="randevu-listesi">
-            <!-- Randevular buraya yüklenecek -->
+    <!-- SAATLİK ÇİZELGE -->
+    <div class="timeline-container">
+        <div class="time-column" id="time-labels"></div>
+        <div class="grid-content" id="grid-content">
+            <div id="grid-rows"></div>
+            <div id="events-layer"></div>
         </div>
     </div>
-</div>
+
+    <!-- POP-UP (MODAL) FORM -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-title">Yeni Randevu Oluştur</h3>
+                <button class="close-btn" onclick="modalKapat()">&times;</button>
+            </div>
+            
+            <div class="field">
+                <label>Müşteri Adı Soyadı</label>
+                <input type="text" id="m_adi" placeholder="Örn: Ayşe Yılmaz">
+            </div>
+            <div class="field">
+                <label>Telefon</label>
+                <input type="text" id="m_tel" placeholder="05xx xxx xx xx">
+            </div>
+            <div class="field">
+                <label>Yapılacak İşlem</label>
+                <input type="text" id="m_hizmet" placeholder="Örn: Mikro Kaynak, Boya">
+            </div>
+            <div class="field">
+                <label>İşlemi Yapacak Personel</label>
+                <input type="text" id="m_personel" placeholder="Örn: Emre, Ahmet">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="field" style="flex:1;">
+                    <label>Saat</label>
+                    <input type="time" id="m_saat" value="10:00">
+                </div>
+                <div class="field" style="flex:1;">
+                    <label>Süre (Dk)</label>
+                    <select id="m_sure">
+                        <option value="30">30 Dakika</option>
+                        <option value="60" selected>1 Saat</option>
+                        <option value="90">1.5 Saat</option>
+                        <option value="120">2 Saat</option>
+                        <option value="180">3 Saat</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label>Özel Not / Kapora Bilgisi</label>
+                <input type="text" id="m_not" placeholder="Örn: 150gr mikro kaynak, kapora alındı.">
+            </div>
+
+            <button class="btn-login" style="margin-top:15px;" onclick="randevuKaydet()">Randevuyu Takvime Ekle</button>
+        </div>
+    </div>
 
 <script>
     const SUPABASE_URL = 'https://pomcbxgouhfvpdgwyepq.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_kpfQg9YJAh28CTTJxKgsEw_JP3Nqz-f';
-    
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    let aktifPersonel = null;
-    let seciliTarih = new Date();
 
-    // Sayfa açıldığında bugünün tarihini ayarla
-    document.getElementById('secili-tarih-input').value = seciliTarih.toISOString().split('T')[0];
+    let aktifUser = null;
+    const SAAT_BASLANGIC = 8; // 08:00
+    const SAAT_BITIS = 21;    // 21:00
+
+    // Sayfa Açılış Ayarları
+    document.getElementById('selected-date').value = new Date().toISOString().split('T')[0];
+    cizelgeOlustur();
+
+    function cizelgeOlustur() {
+        const labels = document.getElementById('time-labels');
+        const rows = document.getElementById('grid-rows');
+        labels.innerHTML = '';
+        rows.innerHTML = '';
+
+        for (let i = SAAT_BASLANGIC; i <= SAAT_BITIS; i++) {
+            const timeStr = (i < 10 ? '0' + i : i) + ':00';
+            
+            const label = document.createElement('div');
+            label.className = 'time-slot-label';
+            label.innerText = timeStr;
+            labels.appendChild(label);
+
+            const row = document.createElement('div');
+            row.className = 'grid-row';
+            rows.appendChild(row);
+        }
+    }
 
     async function girisYap() {
         const u = document.getElementById('username').value.trim();
         const p = document.getElementById('password').value.trim();
 
-        if(!u || !p) { alert('Lütfen kullanıcı adı ve şifre girin.'); return; }
+        if(!u || !p) { alert('Lütfen bilgileri girin'); return; }
 
         const { data, error } = await supabaseClient
             .from('personeller')
@@ -137,136 +203,116 @@
         if (error || !data || data.length === 0) {
             alert('Hatalı kullanıcı adı veya şifre!');
         } else {
-            aktifPersonel = data[0];
+            aktifUser = data[0];
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.remove('hidden');
-            document.getElementById('user-info').innerText = `Giriş Yapan: ${aktifPersonel.ad_soyad}`;
-            randevulariGetir();
+            document.getElementById('user-display').innerText = aktifUser.ad_soyad;
+            randevulariYukle();
         }
     }
 
-    function cikisYap() {
-        aktifPersonel = null;
-        document.getElementById('app-screen').classList.add('hidden');
-        document.getElementById('login-screen').classList.remove('hidden');
+    function modalAc() {
+        document.getElementById('modal-overlay').classList.add('active');
     }
 
-    function gunDegistir(gunSayisi) {
-        seciliTarih.setDate(seciliTarih.getDate() + gunSayisi);
-        document.getElementById('secili-tarih-input').value = seciliTarih.toISOString().split('T')[0];
-        randevulariGetir();
+    function modalKapat() {
+        document.getElementById('modal-overlay').classList.remove('active');
     }
 
-    function tarihSecildi() {
-        const val = document.getElementById('secili-tarih-input').value;
-        if(val) {
-            seciliTarih = new Date(val);
-            randevulariGetir();
-        }
-    }
+    async function randevuKaydet() {
+        const musteri_adi = document.getElementById('m_adi').value.trim();
+        const telefon = document.getElementById('m_tel').value.trim();
+        const hizmet = document.getElementById('m_hizmet').value.trim();
+        const islem_yapan_personel = document.getElementById('m_personel').value.trim();
+        const saat = document.getElementById('m_saat').value;
+        const sure = parseInt(document.getElementById('m_sure').value);
+        const notlar = document.getElementById('m_not').value.trim();
+        const tarih = document.getElementById('selected-date').value;
 
-    async function randevuEkle() {
-        const musteri_adi = document.getElementById('musteri_adi').value.trim();
-        const telefon = document.getElementById('telefon').value.trim();
-        const hizmet = document.getElementById('hizmet').value.trim();
-        const islem_yapan_personel = document.getElementById('islem_yapan').value.trim();
-        const tarih_saat = document.getElementById('tarih_saat').value;
-        const notlar = document.getElementById('notlar').value.trim();
-
-        if(!musteri_adi || !hizmet || !tarih_saat) {
-            alert('Müşteri adı, yapılacak işlem ve tarih/saat zorunludur.');
+        if(!musteri_adi || !hizmet || !saat) {
+            alert('Müşteri adı, işlem ve saat zorunludur.');
             return;
         }
 
+        const tarihSaatISO = `${tarih}T${saat}:00`;
+
         const { error } = await supabaseClient.from('randevular').insert([{
-            musteri_adi, 
-            telefon, 
-            hizmet, 
+            musteri_adi,
+            telefon,
+            hizmet,
             islem_yapan_personel,
-            tarih_saat, 
+            tarih_saat: tarihSaatISO,
+            islem_suresi_dk: sure,
             notlar,
-            personel_id: aktifPersonel.id, 
+            personel_id: aktifUser.id,
             durum: 'Aktif'
         }]);
 
-        if (error) {
-            alert('Hata oluştu: ' + error.message);
+        if(error) {
+            alert('Hata: ' + error.message);
         } else {
-            alert('Randevu başarıyla eklendi!');
-            document.getElementById('musteri_adi').value = '';
-            document.getElementById('telefon').value = '';
-            document.getElementById('hizmet').value = '';
-            document.getElementById('islem_yapan').value = '';
-            document.getElementById('tarih_saat').value = '';
-            document.getElementById('notlar').value = '';
-            
-            // Eklenen randevunun tarihine odaklan
-            seciliTarih = new Date(tarih_saat);
-            document.getElementById('secili-tarih-input').value = seciliTarih.toISOString().split('T')[0];
-            randevulariGetir();
+            modalKapat();
+            // Formu Temizle
+            document.getElementById('m_adi').value = '';
+            document.getElementById('m_tel').value = '';
+            document.getElementById('m_hizmet').value = '';
+            document.getElementById('m_not').value = '';
+            randevulariYukle();
         }
     }
 
-    async function randevulariGetir() {
-        const baslangic = new Date(seciliTarih);
-        baslangic.setHours(0,0,0,0);
-        
-        const bitis = new Date(seciliTarih);
-        bitis.setHours(23,59,59,999);
+    async function randevulariYukle() {
+        const seciliTarih = document.getElementById('selected-date').value;
+        const baslangic = `${seciliTarih}T00:00:00`;
+        const bitis = `${seciliTarih}T23:59:59`;
 
         const { data, error } = await supabaseClient
             .from('randevular')
-            .select('*, personeller(ad_soyad)')
-            .gte('tarih_saat', baslangic.toISOString())
-            .lte('tarih_saat', bitis.toISOString())
-            .order('tarih_saat', { ascending: true });
+            .select('*')
+            .gte('tarih_saat', baslangic)
+            .lte('tarih_saat', bitis)
+            .neq('durum', 'İptal');
 
-        const listeDiv = document.getElementById('randevu-listesi');
-        listeDiv.innerHTML = '';
+        const layer = document.getElementById('events-layer');
+        layer.innerHTML = '';
 
-        if (error) {
-            listeDiv.innerHTML = '<p style="color:red;">Randevular yüklenirken hata oluştu.</p>';
-            return;
-        }
-
-        if (data.length === 0) {
-            listeDiv.innerHTML = '<p style="color:#777; text-align:center; padding: 20px 0;">Bu seçili tarihte kayıtlı randevu bulunmuyor.</p>';
-            return;
-        }
+        if(error || !data) return;
 
         data.forEach(r => {
-            const saatStr = new Date(r.tarih_saat).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-            const ekleyen = r.personeller ? r.personeller.ad_soyad : 'Bilinmiyor';
-            const iptalMi = r.durum === 'İptal';
+            const dateObj = new Date(r.tarih_saat);
+            const saat = dateObj.getHours();
+            const dakika = dateObj.getMinutes();
 
-            const card = document.createElement('div');
-            card.className = `appointment-card ${iptalMi ? 'iptal' : ''}`;
-            card.innerHTML = `
-                <span class="time-badge">⏰ Saat: ${saatStr}</span>
-                <div class="card-row"><strong>Müşteri:</strong> ${r.musteri_adi} ${r.telefon ? '(' + r.telefon + ')' : ''}</div>
-                <div class="card-row"><strong>İşlem:</strong> ${r.hizmet}</div>
-                <div class="card-row"><strong>İşlemi Yapacak:</strong> ${r.islem_yapan_personel || 'Belirtilmedi'}</div>
-                ${r.notlar ? `<div class="note-box">📝 <strong>Not:</strong> ${r.notlar}</div>` : ''}
-                <div style="font-size:11px; color:#888; margin-top:6px;">Sisteme Ekleyen: ${ekleyen}</div>
-                ${!iptalMi ? `<button class="btn-danger" onclick="randevuIptal('${r.id}')">Randevuyu İptal Et</button>` : '<span style="color:red; font-weight:bold; font-size:13px; display:block; margin-top:5px;">İptal Edildi</span>'}
-            `;
-            listeDiv.appendChild(card);
+            // Pozisyon Hesaplama (Her saat 70px yüksekliğinde)
+            const topPx = ((saat - SAAT_BASLANGIC) * 70) + ((dakika / 60) * 70);
+            const heightPx = ((r.islem_suresi_dk || 60) / 60) * 70;
+
+            if(topPx >= 0) {
+                const el = document.createElement('div');
+                el.className = 'app-event';
+                el.style.top = topPx + 'px';
+                el.style.height = (heightPx - 4) + 'px';
+                
+                const saatFormat = (saat < 10 ? '0'+saat : saat) + ':' + (dakika < 10 ? '0'+dakika : dakika);
+
+                el.innerHTML = `
+                    <div class="title">${saatFormat} - ${r.musteri_adi}</div>
+                    <div class="sub"><b>İşlem:</b> ${r.hizmet} ${r.islem_yapan_personel ? ' | 👤 ' + r.islem_yapan_personel : ''}</div>
+                `;
+
+                el.onclick = () => {
+                    if(confirm(`${r.musteri_adi} randevusunu iptal etmek istediğinize emin misiniz?`)) {
+                        randevuIptal(r.id);
+                    }
+                };
+
+                layer.appendChild(el);
+            }
         });
     }
 
     async function randevuIptal(id) {
-        if(confirm('Bu randevuyu iptal etmek istediğinize emin misiniz?')) {
-            const { error } = await supabaseClient
-                .from('randevular')
-                .update({ durum: 'İptal' })
-                .eq('id', id);
-
-            if(error) {
-                alert('İptal edilirken hata oluştu.');
-            } else {
-                randevulariGetir();
-            }
-        }
+        await supabaseClient.from('randevular').update({ durum: 'İptal' }).eq('id', id);
+        randevulariYukle();
     }
 </script>
 
