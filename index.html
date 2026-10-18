@@ -98,7 +98,7 @@
         <div class="date-picker-wrap">
             <input type="date" id="selected-date" onchange="randevulariYukle()">
         </div>
-        <button class="btn-add" onclick="modalAc()">+ Yeni Randevu</button>
+        <button class="btn-add" onclick="modalAc(false)">+ Yeni Randevu</button>
     </div>
 
     <!-- SAATLİK ÇİZELGE -->
@@ -114,10 +114,12 @@
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>Yeni Randevu Oluştur</h3>
+                <h3 id="modal-title">Yeni Randevu Oluştur</h3>
                 <button class="close-btn" onclick="modalKapat()">&times;</button>
             </div>
             
+            <input type="hidden" id="edit_randevu_id" value="">
+
             <div class="field">
                 <label>Müşteri Adı Soyadı</label>
                 <input type="text" id="m_adi" placeholder="Örn: Ayşe Yılmaz">
@@ -145,7 +147,7 @@
                 <input type="text" id="m_not" placeholder="">
             </div>
 
-            <button class="btn-login" style="margin-top:15px;" onclick="randevuKaydet()">Randevuyu Kaydet & Bildir</button>
+            <button class="btn-login" id="btn-submit" style="margin-top:15px;" onclick="randevuKaydet()">Randevuyu Kaydet & Bildir</button>
         </div>
     </div>
 
@@ -156,6 +158,7 @@
 
     let aktifUser = null;
     let personelListesi = [];
+    let mevcutRandevular = [];
     const SAAT_BASLANGIC = 8;
     const SAAT_BITIS = 21;
 
@@ -219,15 +222,44 @@
         }
     }
 
-    function modalAc() { document.getElementById('modal-overlay').classList.add('active'); }
+    function modalAc(isEdit = false, randevuData = null) { 
+        document.getElementById('modal-overlay').classList.add('active'); 
+        if(isEdit && randevuData) {
+            document.getElementById('modal-title').innerText = "Randevuyu Düzenle";
+            document.getElementById('btn-submit').innerText = "Değişiklikleri Kaydet & Bildir";
+            document.getElementById('edit_randevu_id').value = randevuData.id;
+            document.getElementById('m_adi').value = randevuData.musteri_adi || '';
+            document.getElementById('m_tel').value = randevuData.telefon || '';
+            document.getElementById('m_hizmet').value = randevuData.hizmet || '';
+            document.getElementById('m_personel_select').value = randevuData.islem_yapan_personel || '';
+            
+            const dateObj = new Date(randevuData.tarih_saat);
+            const saat = (dateObj.getHours() < 10 ? '0' : '') + dateObj.getHours();
+            const dak = (dateObj.getMinutes() < 10 ? '0' : '') + dateObj.getMinutes();
+            document.getElementById('m_saat').value = `${saat}:${dak}`;
+            document.getElementById('m_not').value = randevuData.notlar || '';
+        } else {
+            document.getElementById('modal-title').innerText = "Yeni Randevu Oluştur";
+            document.getElementById('btn-submit').innerText = "Randevuyu Kaydet & Bildir";
+            document.getElementById('edit_randevu_id').value = "";
+            document.getElementById('m_adi').value = '';
+            document.getElementById('m_tel').value = '';
+            document.getElementById('m_hizmet').value = '';
+            document.getElementById('m_not').value = '';
+            document.getElementById('m_saat').value = '10:00';
+        }
+    }
+    
     function modalKapat() { document.getElementById('modal-overlay').classList.remove('active'); }
 
-    // Otomatik Telegram Bildirimi (Doğru Panel Giriş Linkiyle)
-    async function sendTelegramNotification(randevuObj) {
+    // Otomatik Telegram Bildirimi (Ekleme / Güncelleme Uyumlu)
+    async function sendTelegramNotification(randevuObj, isUpdate = false) {
         const TELEGRAM_BOT_TOKEN = '8932934663:AAEqhcs4JhxlxJyIA0tA1vnGBSDjlQ0f3CE';
         const TELEGRAM_CHAT_ID = '-5429836951';
 
-        const message = "🔔 *Yeni Randevu Talebi!*\n\n" +
+        const baslik = isUpdate ? "✏️ *Randevu Güncellendi!*" : "🔔 *Yeni Randevu Talebi!*";
+
+        const message = baslik + "\n\n" +
                         "👤 *Müşteri:* " + randevuObj.musteri_adi + "\n" +
                         "📞 *Telefon:* " + (randevuObj.telefon || 'Belirtilmedi') + "\n" +
                         "💇‍♂️ *Personel:* " + randevuObj.islem_yapan_personel + "\n" +
@@ -235,7 +267,7 @@
                         "📅 *Tarih:* " + randevuObj.tarih + "\n" +
                         "⏰ *Saat:* " + randevuObj.saat + "\n" +
                         (randevuObj.notlar ? "📝 *Not:* " + randevuObj.notlar + "\n" : "") +
-                        "\n📌 *Ekleyen:* " + (aktifUser ? aktifUser.ad_soyad : 'Sistem') +
+                        "\n📌 *İşlem Yapan:* " + (aktifUser ? aktifUser.ad_soyad : 'Sistem') +
                         "\n\n🌐 *Tüm Randevuları Gör:* https://areskuafor.com.tr/ares-randevu/";
 
         try {
@@ -254,6 +286,7 @@
     }
 
     async function randevuKaydet() {
+        const editId = document.getElementById('edit_randevu_id').value;
         const musteri_adi = document.getElementById('m_adi').value.trim();
         const telefon = document.getElementById('m_tel').value.trim();
         const hizmet = document.getElementById('m_hizmet').value.trim();
@@ -269,6 +302,7 @@
         }
 
         const tarihSaatISO = `${tarih}T${saat}:00`;
+        const isUpdate = !!editId;
 
         // Telegram bildirimini tetikle
         sendTelegramNotification({
@@ -279,22 +313,39 @@
             tarih,
             saat,
             notlar
-        });
+        }, isUpdate);
 
-        const { error } = await supabaseClient.from('randevular').insert([{
-            musteri_adi,
-            telefon,
-            hizmet,
-            islem_yapan_personel,
-            tarih_saat: tarihSaatISO,
-            islem_suresi_dk: 60,
-            notlar,
-            personel_id: aktifUser ? aktifUser.id : null,
-            durum: 'Aktif'
-        }]);
+        let error = null;
+
+        if(isUpdate) {
+            // Randevu Güncelleme
+            const res = await supabaseClient.from('randevular').update({
+                musteri_adi,
+                telefon,
+                hizmet,
+                islem_yapan_personel,
+                tarih_saat: tarihSaatISO,
+                notlar
+            }).eq('id', editId);
+            error = res.error;
+        } else {
+            // Yeni Randevu Ekleme
+            const res = await supabaseClient.from('randevular').insert([{
+                musteri_adi,
+                telefon,
+                hizmet,
+                islem_yapan_personel,
+                tarih_saat: tarihSaatISO,
+                islem_suresi_dk: 60,
+                notlar,
+                personel_id: aktifUser ? aktifUser.id : null,
+                durum: 'Aktif'
+            }]);
+            error = res.error;
+        }
 
         if(error) {
-            alert('Supabase Kayıt Hatası: ' + error.message);
+            alert('Supabase İşlem Hatası: ' + error.message);
         } else {
             modalKapat();
 
@@ -303,6 +354,7 @@
             document.getElementById('m_tel').value = '';
             document.getElementById('m_hizmet').value = '';
             document.getElementById('m_not').value = '';
+            document.getElementById('edit_randevu_id').value = '';
             
             randevulariYukle();
         }
@@ -324,6 +376,7 @@
         layer.innerHTML = '';
 
         if(!data) return;
+        mevcutRandevular = data;
 
         data.forEach(r => {
             const dateObj = new Date(r.tarih_saat);
@@ -349,14 +402,27 @@
                 `;
 
                 el.onclick = () => {
-                    if(confirm(`${r.musteri_adi} randevusunu iptal etmek istediğinize emin misiniz?`)) {
-                        randevuIptal(r.id);
-                    }
+                    randevuSecimAksiyonu(r);
                 };
 
                 layer.appendChild(el);
             }
         });
+    }
+
+    function randevuSecimAksiyonu(randevu) {
+        const secim = prompt(
+            `${randevu.musteri_adi} randevusu için yapmak istediğiniz işlemi seçin:\n\n1 - Randevuyu Düzenle\n2 - Randevuyu İptal Et\n\n(Vazgeçmek için İptal'e basın)`,
+            "1"
+        );
+
+        if (secim === "1") {
+            modalAc(true, randevu);
+        } else if (secim === "2") {
+            if(confirm(`${randevu.musteri_adi} randevusunu iptal etmek istediğinize emin misiniz?`)) {
+                randevuIptal(randevu.id);
+            }
+        }
     }
 
     async function randevuIptal(id) {
