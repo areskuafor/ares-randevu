@@ -74,11 +74,11 @@
             <h2>Ares Kuaför Pro</h2>
             <div class="field">
                 <label>Kullanıcı Adı</label>
-                <input type="text" id="username" placeholder="admin">
+                <input type="text" id="username" placeholder="Kullanıcı adınızı yazın">
             </div>
             <div class="field">
                 <label>Şifre</label>
-                <input type="password" id="password" placeholder="123">
+                <input type="password" id="password" placeholder="••••••••">
             </div>
             <button class="btn-login" onclick="girisYap()">Sisteme Giriş Yap</button>
         </div>
@@ -324,7 +324,7 @@
                         <div class="title">${saatFormat} - ${r.musteri_adi}</div>
                         <div class="sub"><b>İşlem:</b> ${r.hizmet} ${r.islem_yapan_personel ? ' | 👤 ' + r.islem_yapan_personel : ''}</div>
                     </div>
-                    <button class="btn-wa-card" onclick="event.stopPropagation(); tumEkibeWA('${seciliTarih}', '${saatFormat}', '${r.musteri_adi}', '${r.hizmet}', '${r.islem_yapan_personel || ''}', '${r.notlar || ''}')">📢 Ekibe WhatsApp Gönder</button>
+                    <button class="btn-wa-card" onclick="event.stopPropagation(); tumEkibeWA('${seciliTarih}', '${saatFormat}', '${r.musteri_adi}', '${r.hiznet}', '${r.islem_yapan_personel || ''}', '${r.notlar || ''}')">📢 Ekibe WhatsApp Gönder</button>
                 `;
 
                 el.onclick = () => {
