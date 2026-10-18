@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ares Kuaför Pro Takvim</title>
+    
+    <!-- PWA / Ana Ekran ve Tarayıcı Logo (Favicon) Tanımları -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="theme-color" content="#0f172a">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -216,7 +222,7 @@
     function modalAc() { document.getElementById('modal-overlay').classList.add('active'); }
     function modalKapat() { document.getElementById('modal-overlay').classList.remove('active'); }
 
-    // Otomatik Telegram Bildirimi (Site Linki Dahil)
+    // Otomatik Telegram Bildirimi (Doğru Panel Giriş Linkiyle)
     async function sendTelegramNotification(randevuObj) {
         const TELEGRAM_BOT_TOKEN = '8932934663:AAEqhcs4JhxlxJyIA0tA1vnGBSDjlQ0f3CE';
         const TELEGRAM_CHAT_ID = '-5429836951';
@@ -230,7 +236,7 @@
                         "⏰ *Saat:* " + randevuObj.saat + "\n" +
                         (randevuObj.notlar ? "📝 *Not:* " + randevuObj.notlar + "\n" : "") +
                         "\n📌 *Ekleyen:* " + (aktifUser ? aktifUser.ad_soyad : 'Sistem') +
-                        "\n\n🌐 *Tüm Randevuları Gör:* https://areskuafor.com.tr";
+                        "\n\n🌐 *Tüm Randevuları Gör:* https://areskuafor.com.tr/ares-randevu/";
 
         try {
             await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
@@ -292,7 +298,7 @@
         } else {
             modalKapat();
 
-            // Form Temizle
+            // Formu Temizle
             document.getElementById('m_adi').value = '';
             document.getElementById('m_tel').value = '';
             document.getElementById('m_hizmet').value = '';
