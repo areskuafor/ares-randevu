@@ -62,6 +62,9 @@ h1{font-size:18px;color:var(--acc)}
 .lh{font-size:13px;color:#d2c9b8;margin-top:3px;overflow-wrap:anywhere}
 .lp{font-size:12px;font-weight:700;margin-top:5px}
 .bos{text-align:center;color:var(--mut);padding:48px 16px;white-space:pre-line;font-size:14px;line-height:1.6}
+.ev.bitti,.li.bitti{background:linear-gradient(110deg,#17211a,#121512);border-color:#2f4a36;opacity:.75}
+.ev.bitti .t,.li.bitti .ls{color:#9bd3a8}
+.lb{font-size:12px;font-weight:700;color:#7fc592;margin-top:4px}
 .now{position:absolute;left:0;right:0;height:2px;background:#e5484d;z-index:1;pointer-events:none}
 /* Pencereler */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:50;display:flex;justify-content:center;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -197,6 +200,12 @@ const dk = s => { const [h, m] = s.split(':'); return +h * 60 + +m; };
 const trTarih = t => t.split('-').reverse().join('.');
 const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 3200); }
+// Başlangıç saati + süre (varsayılan 60 dk) geçtiyse randevu tamamlanmış sayılır
+const bitti = r => {
+  if (r.durum === 'İptal') return false;
+  const [y, m, d] = r.tarih_saat.slice(0, 10).split('-').map(Number), [h, mi] = r.tarih_saat.slice(11, 16).split(':').map(Number);
+  return new Date(y, m - 1, d, h, mi + (r.islem_suresi_dk || 60)) <= new Date();
+};
 const yetkili = r => ben && (ben.rol === 'yonetici' || String(r.personel_id) === String(ben.id));
 
 /* ---------- Giriş / çıkış (Supabase Auth) ---------- */
@@ -284,9 +293,9 @@ function cizListe(f) {
   if (!l.length) w.appendChild(el('div', 'bos', 'Bu gün için randevu yok.\nSağ alttaki + tuşuyla ekleyebilirsin.'));
   l.forEach(r => {
     const ci = Math.max(0, personel.findIndex(p => p.ad_soyad === r.islem_yapan_personel)), renk = RENK[ci % RENK.length];
-    const c = el('div', 'li' + (r.durum === 'İptal' ? ' iptal' : '')); c.style.borderLeftColor = renk;
+    const c = el('div', 'li' + (r.durum === 'İptal' ? ' iptal' : '') + (bitti(r) ? ' bitti' : '')); c.style.borderLeftColor = renk;
     const g = el('div', 'lg'), p = el('div', 'lp', r.islem_yapan_personel || ''); p.style.color = renk;
-    g.append(el('div', 'lt', r.musteri_adi), el('div', 'lh', r.hizmet + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')), p);
+    g.append(el('div', 'lt', r.musteri_adi), el('div', 'lh', r.hizmet + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')), p, ...(bitti(r) ? [el('div', 'lb', '✓ Tamamlandı')] : []));
     c.append(el('div', 'ls', r.tarih_saat.slice(11, 16)), g);
     c.onclick = () => islemAc(r);
     w.appendChild(c);
@@ -322,10 +331,10 @@ function ciz() {
       const s = r.tarih_saat.slice(11, 16), top = (dk(s) - S0 * 60) / 60 * H;
       if (top < 0) return;
       const d = r.islem_suresi_dk || 60, iptal = r.durum === 'İptal';
-      const e = el('div', 'ev' + (iptal ? ' iptal' : ''));
+      const e = el('div', 'ev' + (iptal ? ' iptal' : '') + (bitti(r) ? ' bitti' : ''));
       const w = 100 / seritler.length;
       e.style.cssText = `top:${top}px;height:${Math.max(d / 60 * H - 2, 30)}px;border-left-color:${renk};left:calc(${yer.get(r) * w}% + 3px);right:auto;width:calc(${w}% - 6px)`;
-      e.append(el('div', 't', s + ' ' + r.musteri_adi),
+      e.append(el('div', 't', (bitti(r) ? '✓ ' : '') + s + ' ' + r.musteri_adi),
                el('div', 's', r.hizmet + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')));
       e.onclick = ev => { ev.stopPropagation(); islemAc(r); };
       b.appendChild(e);
@@ -414,7 +423,7 @@ const wa = t => { let n = t.replace(/\D/g, ''); if (n.startsWith('0')) n = '9' +
 
 function islemAc(r) {
   const saat = r.tarih_saat.slice(11, 16), tarih = trTarih(r.tarih_saat.slice(0, 10));
-  const n = [el('div', 'info', `${tarih} ${saat} • ${r.islem_yapan_personel || ''}`),
+  const n = [el('div', 'info', `${tarih} ${saat} • ${r.islem_yapan_personel || ''}${bitti(r) ? ' • Tamamlandı' : ''}`),
              el('div', 'info', `İşlem: ${r.hizmet}${r.telefon ? ' • ' + r.telefon : ''}${r.notlar ? ' • Not: ' + r.notlar : ''}`)];
   if (r.durum === 'İptal') {
     n.push(el('div', 'info', 'İptal nedeni: ' + (r.iptal_nedeni || 'belirtilmedi')));
