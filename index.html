@@ -13,6 +13,7 @@
 :root{--bg:#090909;--acc:#d8b36a;--red:#a61f26;--bd:#393127;--tx:#f7f3ec;--mut:#b8afa0;--gold:linear-gradient(135deg,#e7c77f,#c99b49)}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
+body{height:100dvh}
 body{background:var(--bg);color:var(--tx);display:flex;flex-direction:column;overflow:hidden}
 button,input,select{font:inherit;color-scheme:dark}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
@@ -44,6 +45,15 @@ h1{font-size:18px;color:var(--acc)}
 .ev .t{font-size:12px;font-weight:700;color:#f5d995;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev .s{font-size:10px;color:#d2c9b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev.iptal{opacity:.45;text-decoration:line-through}
+.liste{flex:1;min-width:0;padding:10px 10px 96px;display:flex;flex-direction:column;gap:8px;align-content:flex-start}
+.li{display:flex;gap:12px;align-items:flex-start;background:linear-gradient(110deg,#211d16,#171512);border:1px solid #4b3b23;border-left:5px solid var(--acc);border-radius:10px;padding:12px;cursor:pointer}
+.li.iptal{opacity:.45;text-decoration:line-through}
+.ls{font-size:18px;font-weight:700;color:#f5d995;min-width:54px}
+.lg{min-width:0;flex:1}
+.lt{font-size:15px;font-weight:700;overflow-wrap:anywhere}
+.lh{font-size:13px;color:#d2c9b8;margin-top:3px;overflow-wrap:anywhere}
+.lp{font-size:12px;font-weight:700;margin-top:5px}
+.bos{text-align:center;color:var(--mut);padding:48px 16px;white-space:pre-line;font-size:14px;line-height:1.6}
 .now{position:absolute;left:0;right:0;height:2px;background:#e5484d;z-index:1;pointer-events:none}
 /* Pencereler */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:50;display:flex;justify-content:center;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -58,7 +68,9 @@ h1{font-size:18px;color:var(--acc)}
 .f input,.f select{width:100%;padding:11px;border:1px solid #484035;background:#100f0d;color:var(--tx);border-radius:9px;font-size:14px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
-.chip{background:#211d16;border:1px solid #51432c;color:var(--acc);border-radius:16px;padding:5px 10px;font-size:12px;cursor:pointer}
+.chip{background:#211d16;border:1px solid #51432c;color:#d8c9a7;border-radius:18px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.chip.on{background:var(--gold);color:#171109;border-color:#f1d99b}
+.fab{display:none;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;background:var(--gold);color:#171109;border:1px solid #f1d99b;font-size:30px;font-weight:700;align-items:center;justify-content:center;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer}
 .big{display:block;width:100%;text-align:center;text-decoration:none;background:var(--gold);color:#171109;border:1px solid #f1d99b;padding:12px;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;margin-top:9px}
 .big.alt{background:#211d16;color:var(--acc);border-color:#51432c}
 .big.red{background:rgba(166,31,38,.25);color:#ffb5b5;border-color:rgba(214,70,76,.55)}
@@ -70,7 +82,22 @@ h1{font-size:18px;color:var(--acc)}
 .lbox h2{text-align:center;color:var(--acc);margin-bottom:20px;font-size:21px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2a2216;border:1px solid var(--acc);color:var(--tx);padding:10px 16px;border-radius:10px;font-size:13px;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
 #toast.on{opacity:1}
-@media(max-width:640px){.badge{display:none}.pcol{min-width:135px}}
+@media(max-width:640px){
+header{padding:10px 12px}
+.badge{display:none}
+.ctl{padding:8px 10px}
+.ctl input,.ctl select,.f input,.f select{font-size:16px}
+#yeni{display:none}
+.fab{display:flex}
+.row{flex-wrap:wrap}
+.tcol{width:44px;min-width:44px}
+.pcol{flex:0 0 46vw;min-width:46vw}
+#board{scroll-snap-type:x proximity}
+.pcol{scroll-snap-align:start}
+.ev .t{font-size:13px}.ev .s{font-size:11px}
+.chip{padding:9px 13px;font-size:13px}
+.card{max-height:92dvh}
+}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -95,7 +122,7 @@ h1{font-size:18px;color:var(--acc)}
   <div class="row">
     <div class="row" style="justify-content:flex-start">
       <button class="nav" id="geri" aria-label="Önceki gün">&lt;</button>
-      <input type="date" id="tarih" style="width:128px">
+      <input type="date" id="tarih" style="flex:1;min-width:0;max-width:170px">
       <button class="nav" id="ileri" aria-label="Sonraki gün">&gt;</button>
       <button class="today" id="bugun">Bugün</button>
     </div>
@@ -103,7 +130,7 @@ h1{font-size:18px;color:var(--acc)}
   </div>
   <div class="row">
     <select id="filtre" style="flex:1"><option value="">Tüm personeller</option></select>
-    <label class="chk"><input type="checkbox" id="iptalGoster">İptalleri göster</label>
+    <label class="chk"><input type="checkbox" id="iptalGoster">İptaller</label>
     <div class="sum" id="ozet">0 randevu</div>
   </div>
   <div class="row"><input id="ara" type="search" placeholder="Müşteri adı veya telefon ara, Enter'a bas"></div>
@@ -117,16 +144,15 @@ h1{font-size:18px;color:var(--acc)}
   <input type="hidden" id="eid">
   <div class="f"><label for="m_adi">Müşteri adı soyadı</label><input id="m_adi" list="musteriler" autocomplete="off"><datalist id="musteriler"></datalist></div>
   <div class="f"><label for="m_tel">Telefon</label><input id="m_tel" type="tel" placeholder="05xx xxx xx xx"></div>
-  <div class="f"><label for="m_hiz">Yapılacak işlem</label><input id="m_hiz"><div class="chips" id="chips"></div></div>
+  <div class="f"><label>Yapılacak işlem (birden fazla seçilebilir)</label><div class="chips" id="chips"></div><input id="m_diger" class="hidden" placeholder="Yapılacak işlemi yazın" style="margin-top:8px"></div>
   <div class="two">
     <div class="f"><label for="m_per">Personel</label><select id="m_per"></select></div>
-    <div class="f"><label for="m_sure">Süre</label><select id="m_sure"></select></div>
+    <div class="f"><label for="m_saat">Saat</label><input type="time" id="m_saat" step="900"></div>
   </div>
   <div class="two">
-    <div class="f"><label for="m_saat">Saat</label><input type="time" id="m_saat" step="900"></div>
     <div class="f"><label for="m_kap">Kapora (₺)</label><input type="number" id="m_kap" min="0" value="0" inputmode="decimal"></div>
+    <label class="chk" style="margin-top:20px"><input type="checkbox" id="m_odendi">Kapora ödendi</label>
   </div>
-  <label class="chk" style="margin-bottom:12px"><input type="checkbox" id="m_odendi">Kapora ödendi</label>
   <div class="f"><label for="m_not">Özel not</label><input id="m_not"></div>
   <button class="big" id="kaydet">Randevuyu kaydet</button>
 </div></div>
@@ -137,13 +163,13 @@ h1{font-size:18px;color:var(--acc)}
   <div id="sIcerik"></div>
 </div></div>
 
+<button class="fab" id="fab" aria-label="Yeni randevu">+</button>
 <div id="toast" role="status"></div>
 
 <script>
 const sb = supabase.createClient('https://pomcbxgouhfvpdgwyepq.supabase.co', 'sb_publishable_kpfQg9YJAh28CTTJxKgsEw_JP3Nqz-f');
 const S0 = 8, S1 = 21, H = 70;
 const RENK = ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'];
-const HIZMET = [['Kesim',30],['Fön',30],['Boya',120],['Mikro kaynak',180],['Manikür',60],['Bakım',45]];
 let ben = null, personel = [], rands = [], musteriMap = {}, ilkKaydir = true, kanal = null;
 
 const $ = id => document.getElementById(id);
@@ -223,8 +249,30 @@ async function musterileriYukle() {
 $('m_adi').oninput = () => { const t = musteriMap[$('m_adi').value]; if (t && !$('m_tel').value) $('m_tel').value = t; };
 
 /* ---------- Çizelge ---------- */
+const mobil = () => matchMedia('(max-width:640px)').matches;
+matchMedia('(max-width:640px)').addEventListener('change', () => { if (ben) ciz(); });
+
+function cizListe(f) {
+  const B = $('board'); B.replaceChildren();
+  const l = rands.filter(r => !f || r.islem_yapan_personel === f);
+  const w = el('div', 'liste');
+  if (!l.length) w.appendChild(el('div', 'bos', 'Bu gün için randevu yok.\nSağ alttaki + tuşuyla ekleyebilirsin.'));
+  l.forEach(r => {
+    const ci = Math.max(0, personel.findIndex(p => p.ad_soyad === r.islem_yapan_personel)), renk = RENK[ci % RENK.length];
+    const c = el('div', 'li' + (r.durum === 'İptal' ? ' iptal' : '')); c.style.borderLeftColor = renk;
+    const g = el('div', 'lg'), p = el('div', 'lp', r.islem_yapan_personel || ''); p.style.color = renk;
+    g.append(el('div', 'lt', r.musteri_adi), el('div', 'lh', r.hizmet + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')), p);
+    c.append(el('div', 'ls', r.tarih_saat.slice(11, 16)), g);
+    c.onclick = () => islemAc(r);
+    w.appendChild(c);
+  });
+  B.appendChild(w);
+}
+
 function ciz() {
   const f = $('filtre').value, bugun = $('tarih').value === yerel();
+  $('ozet').textContent = rands.filter(r => r.durum !== 'İptal' && (!f || r.islem_yapan_personel === f)).length + ' randevu';
+  if (mobil()) return cizListe(f);
   const adlar = f ? [f] : [...new Set([...personel.map(p => p.ad_soyad), ...rands.map(r => r.islem_yapan_personel).filter(Boolean)])];
   const B = $('board'); B.replaceChildren();
   const tc = el('div', 'tcol'); tc.appendChild(el('div', 'phead'));
@@ -278,13 +326,32 @@ document.querySelectorAll('[data-kapat]').forEach(b => b.onclick = kapat);
 document.querySelectorAll('.ov').forEach(o => o.onclick = e => { if (e.target === o) kapat(); });
 $('yeni').onclick = () => formAc();
 
-// Süre seçenekleri ve hızlı hizmet butonları
-for (let m = 15; m <= 300; m += 15) $('m_sure').add(new Option(m >= 60 ? `${Math.floor(m/60)} sa${m % 60 ? ' ' + m % 60 + ' dk' : ''}` : m + ' dk', m));
-HIZMET.forEach(([a, d]) => {
-  const c = el('button', 'chip', `${a} (${d} dk)`); c.type = 'button';
-  c.onclick = () => { $('m_hiz').value = a; $('m_sure').value = d; };
+// Hazır işlem seçenekleri (birden fazla seçilebilir, DİĞER seçilince elle yazma kutusu açılır)
+const HIZMETLER = ['DİP BOYA','KESİM','OMBRE','GELİN SAÇI','NİŞAN SAÇI','NİKAH SAÇI','MAKYAJ','MANİKÜR','PEDİKÜR','FÖN','RÖFLE','KAŞ','MAŞA','KERATİN','KOMPLE BOYA','AÇMA','BOYAMA','KAYNAK','DİĞER'];
+HIZMETLER.forEach(a => {
+  const c = el('button', 'chip', a); c.type = 'button'; c.dataset.a = a;
+  c.onclick = () => {
+    c.classList.toggle('on');
+    if (a === 'DİĞER') { const d = $('m_diger'); d.classList.toggle('hidden', !c.classList.contains('on')); if (c.classList.contains('on')) d.focus(); }
+  };
   $('chips').appendChild(c);
 });
+const chipler = () => [...document.querySelectorAll('#chips .chip')];
+function hizmetSec(str) {
+  const parcalar = (str || '').split(' + ').map(x => x.trim()).filter(Boolean), diger = [];
+  chipler().forEach(c => c.classList.remove('on'));
+  parcalar.forEach(p => { const c = chipler().find(x => x.dataset.a === p && p !== 'DİĞER'); if (c) c.classList.add('on'); else diger.push(p); });
+  chipler().find(x => x.dataset.a === 'DİĞER').classList.toggle('on', diger.length > 0);
+  $('m_diger').classList.toggle('hidden', !diger.length);
+  $('m_diger').value = diger.join(' + ');
+}
+function hizmetAl() {
+  const sec = chipler().filter(c => c.classList.contains('on') && c.dataset.a !== 'DİĞER').map(c => c.dataset.a);
+  const dc = chipler().find(x => x.dataset.a === 'DİĞER'), d = $('m_diger').value.trim().toLocaleUpperCase('tr-TR');
+  if (dc.classList.contains('on') && d) sec.push(d);
+  return sec.join(' + ');
+}
+$('fab').onclick = () => formAc();
 
 function formAc(r, saat, per) {
   $('eid').value = r ? r.id : '';
@@ -292,9 +359,8 @@ function formAc(r, saat, per) {
   $('kaydet').textContent = r ? 'Değişiklikleri kaydet' : 'Randevuyu kaydet';
   $('m_adi').value = r ? r.musteri_adi || '' : '';
   $('m_tel').value = r ? r.telefon || '' : '';
-  $('m_hiz').value = r ? r.hizmet || '' : '';
+  hizmetSec(r ? r.hizmet : '');
   $('m_per').value = r ? r.islem_yapan_personel : (per || $('filtre').value || ben.ad_soyad);
-  $('m_sure').value = r ? r.islem_suresi_dk || 60 : 60;
   $('m_saat').value = r ? r.tarih_saat.slice(11, 16) : (saat || '10:00');
   $('m_kap').value = r ? r.kapora || 0 : 0;
   $('m_odendi').checked = r ? !!r.kapora_odendi : false;
@@ -312,7 +378,7 @@ const wa = t => { let n = t.replace(/\D/g, ''); if (n.startsWith('0')) n = '9' +
 
 function islemAc(r) {
   const saat = r.tarih_saat.slice(11, 16), tarih = trTarih(r.tarih_saat.slice(0, 10));
-  const n = [el('div', 'info', `${tarih} ${saat} • ${r.islem_suresi_dk || 60} dk • ${r.islem_yapan_personel || ''}`),
+  const n = [el('div', 'info', `${tarih} ${saat} • ${r.islem_yapan_personel || ''}`),
              el('div', 'info', `İşlem: ${r.hizmet}${r.telefon ? ' • ' + r.telefon : ''}${r.notlar ? ' • Not: ' + r.notlar : ''}`)];
   if (r.durum === 'İptal') {
     n.push(el('div', 'info', 'İptal nedeni: ' + (r.iptal_nedeni || 'belirtilmedi')));
@@ -344,8 +410,8 @@ async function durumDegis(r, durum, neden) {
 $('kaydet').onclick = async () => {
   const eid = $('eid').value, tarih = $('tarih').value;
   const v = {
-    musteri_adi: $('m_adi').value.trim(), telefon: $('m_tel').value.trim(), hizmet: $('m_hiz').value.trim(),
-    islem_yapan_personel: $('m_per').value, islem_suresi_dk: +$('m_sure').value,
+    musteri_adi: $('m_adi').value.trim(), telefon: $('m_tel').value.trim(), hizmet: hizmetAl(),
+    islem_yapan_personel: $('m_per').value,
     kapora: +$('m_kap').value || 0, kapora_odendi: $('m_odendi').checked, notlar: $('m_not').value.trim()
   };
   const saat = $('m_saat').value;
@@ -354,7 +420,7 @@ $('kaydet').onclick = async () => {
 
   let error;
   if (eid) ({ error } = await sb.from('randevular').update(v).eq('id', eid));
-  else ({ error } = await sb.from('randevular').insert([{ ...v, personel_id: ben.id, durum: 'Aktif' }]));
+  else ({ error } = await sb.from('randevular').insert([{ ...v, islem_suresi_dk: 60, personel_id: ben.id, durum: 'Aktif' }]));
   if (error) return toast('Kayıt hatası: ' + error.message);
 
   bildir({ ...v, tarih: trTarih(tarih), saat }, eid ? 'guncelleme' : 'yeni');
@@ -365,7 +431,15 @@ $('kaydet').onclick = async () => {
 function bildir(r, tur, neden) {
   const tarih = r.tarih || trTarih(r.tarih_saat.slice(0, 10)), saat = r.saat || r.tarih_saat.slice(11, 16);
   sb.functions.invoke('bildirim', { body: { ...r, tarih, saat, tur, iptal_nedeni: neden || '' } })
-    .catch(() => toast('Bildirim gönderilemedi'));
+    .then(async ({ data, error }) => {
+      if (error) {
+        let d = error.message;
+        try { d = await error.context.text(); } catch (e) {}
+        return toast('Bildirim hatası: ' + d);
+      }
+      if (data && data.ok === false) toast('Telegram hatası: ' + (data.aciklama || 'bilinmiyor'));
+    })
+    .catch(e => toast('Bildirim hatası: ' + e.message));
 }
 
 /* ---------- Arama ---------- */
