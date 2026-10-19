@@ -29,6 +29,9 @@ h1{font-size:18px;color:var(--acc)}
 .nav{color:var(--acc);cursor:pointer}
 .today{background:none;border:1px solid var(--acc);color:var(--acc);padding:7px 9px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer}
 .add{background:var(--gold);color:#171109;border:1px solid #f1d99b;padding:9px 13px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+.gun{text-align:center;line-height:1.25}
+#gunTarih{font-size:18px;font-weight:700;color:var(--acc)}
+#gunAdi{font-size:13px;font-weight:600;color:var(--mut)}
 .sum{font-size:12px;font-weight:700;color:var(--acc);background:rgba(216,179,106,.13);padding:7px 10px;border-radius:8px;white-space:nowrap}
 .chk{font-size:12px;color:var(--mut);display:flex;gap:5px;align-items:center;white-space:nowrap}
 .chk input{width:auto}
@@ -122,6 +125,7 @@ header{padding:10px 12px}
 </header>
 
 <div class="ctl">
+  <div class="gun"><div id="gunTarih"></div><div id="gunAdi"></div></div>
   <div class="row">
     <div class="row" style="justify-content:flex-start">
       <button class="nav" id="geri" aria-label="Önceki gün">&lt;</button>
@@ -231,7 +235,14 @@ $('iptalGoster').onchange = yukle;
 $('tarih').value = yerel();
 
 /* ---------- Veri ---------- */
+function gunYaz() {
+  const [y, m, d] = $('tarih').value.split('-').map(Number), t = new Date(y, m - 1, d);
+  $('gunTarih').textContent = t.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  $('gunAdi').textContent = t.toLocaleDateString('tr-TR', { weekday: 'long' }) + ($('tarih').value === yerel() ? ' • Bugün' : '');
+}
+
 async function yukle() {
+  gunYaz();
   if (!ben) return;
   const t = $('tarih').value;
   let q = sb.from('randevular').select('*').gte('tarih_saat', t + 'T00:00:00').lte('tarih_saat', t + 'T23:59:59').order('tarih_saat');
