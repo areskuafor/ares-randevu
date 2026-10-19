@@ -38,10 +38,10 @@
 
         /* Giriş Ekranı */
         #login-screen { position: fixed; inset: 0; background: var(--primary); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .login-box { background: white; padding: 28px; border-radius: 16px; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
-        .login-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; margin: 0 auto 12px auto; display: block; border: 2px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .login-box { background: white; padding: 28px; border-radius: 16px; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .login-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; margin: 0 auto 16px auto; display: block; border: 2px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .login-box h2 { font-size: 22px; text-align: center; margin-bottom: 20px; color: var(--primary); }
-        .field { margin-bottom: 14px; text-align: left; }
+        .field { margin-bottom: 14px; }
         .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
         .field input, .field select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; }
         .btn-login { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px; }
@@ -192,20 +192,29 @@
 
         if(!u || !p) { alert('Lütfen bilgileri girin'); return; }
 
-        const { data, error } = await supabaseClient
-            .from('personeller')
-            .select('*')
-            .eq('kullanici_adi', u)
-            .eq('sifre', p);
+        try {
+            const { data, error } = await supabaseClient
+                .from('personeller')
+                .select('*')
+                .eq('kullanici_adi', u)
+                .eq('sifre', p);
 
-        if (error || !data || data.length === 0) {
-            alert('Hatalı kullanıcı adı veya şifre!');
-        } else {
-            aktifUser = data[0];
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('user-display').innerText = aktifUser.ad_soyad;
-            personelleriYukle();
-            randevulariYukle();
+            if (error) {
+                alert('Veritabanı hatası: ' + error.message);
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                alert('Hatalı kullanıcı adı veya şifre!');
+            } else {
+                aktifUser = data[0];
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('user-display').innerText = aktifUser.ad_soyad;
+                personelleriYukle();
+                randevulariYukle();
+            }
+        } catch (e) {
+            alert('Giriş yapılırken bir hata oluştu: ' + e.message);
         }
     }
 
@@ -235,7 +244,6 @@
             document.getElementById('m_hizmet').value = randevuData.hizmet || '';
             document.getElementById('m_personel_select').value = randevuData.islem_yapan_personel || '';
             
-            // Saat bilgisini metin parçalama ile alma (UTC kaymasını önler)
             const saatParcasi = randevuData.tarih_saat.split('T')[1] || randevuData.tarih_saat.split(' ')[1];
             if(saatParcasi) {
                 document.getElementById('m_saat').value = saatParcasi.substring(0, 5);
@@ -255,7 +263,6 @@
     
     function modalKapat() { document.getElementById('modal-overlay').classList.remove('active'); }
 
-    // Otomatik Telegram Bildirimi (Ekleme / Güncelleme Uyumlu)
     async function sendTelegramNotification(randevuObj, isUpdate = false) {
         const TELEGRAM_BOT_TOKEN = '8932934663:AAEqhcs4JhxlxJyIA0tA1vnGBSDjlQ0f3CE';
         const TELEGRAM_CHAT_ID = '-5429836951';
@@ -270,4 +277,119 @@
                         "📅 *Tarih:* " + randevuObj.tarih + "\n" +
                         "⏰ *Saat:* " + randevuObj.saat + "\n" +
                         (randevuObj.notlar ? "📝 *Not:* " + randevuObj.notlar + "\n" : "") +
-                        "\n📌 *İşlem Yapan:* " + (aktifUser ? aktifUser.ad_soyad
+                        "\n📌 *İşlem Yapan:* " + (aktifUser ? aktifUser.ad_soyad : 'Sistem') +
+                        "\n\n🌐 *Tüm Randevuları Gör:* https://areskuafor.com.tr/ares-randevu/";
+
+        try {
+            await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            });
+        } catch (error) {
+            console.error('Telegram gönderim hatası:', error);
+        }
+    }
+
+    async function randevuKaydet() {
+        const editId = document.getElementById('edit_randevu_id').value;
+        const musteri_adi = document.getElementById('m_adi').value.trim();
+        const telefon = document.getElementById('m_tel').value.trim();
+        const hizmet = document.getElementById('m_hizmet').value.trim();
+        const selectEl = document.getElementById('m_personel_select');
+        const islem_yapan_personel = selectEl.value;
+        const saat = document.getElementById('m_saat').value;
+        const notlar = document.getElementById('m_not').value.trim();
+        const tarih = document.getElementById('selected-date').value;
+
+        if(!musteri_adi || !hizmet || !saat) {
+            alert('Müşteri adı, işlem ve saat zorunludur.');
+            return;
+        }
+
+        const tarihSaatISO = `${tarih}T${saat}:00`;
+        const isUpdate = !!editId;
+
+        sendTelegramNotification({
+            musteri_adi,
+            telefon,
+            hizmet,
+            islem_yapan_personel,
+            tarih,
+            saat,
+            notlar
+        }, isUpdate);
+
+        let error = null;
+
+        if(isUpdate) {
+            const res = await supabaseClient.from('randevular').update({
+                musteri_adi,
+                telefon,
+                hizmet,
+                islem_yapan_personel,
+                tarih_saat: tarihSaatISO,
+                notlar
+            }).eq('id', editId);
+            error = res.error;
+        } else {
+            const res = await supabaseClient.from('randevular').insert([{
+                musteri_adi,
+                telefon,
+                hizmet,
+                islem_yapan_personel,
+                tarih_saat: tarihSaatISO,
+                islem_suresi_dk: 60,
+                notlar,
+                personel_id: aktifUser ? aktifUser.id : null,
+                durum: 'Aktif'
+            }]);
+            error = res.error;
+        }
+
+        if(error) {
+            alert('Supabase İşlem Hatası: ' + error.message);
+        } else {
+            modalKapat();
+
+            document.getElementById('m_adi').value = '';
+            document.getElementById('m_tel').value = '';
+            document.getElementById('m_hizmet').value = '';
+            document.getElementById('m_not').value = '';
+            document.getElementById('edit_randevu_id').value = '';
+            
+            randevulariYukle();
+        }
+    }
+
+    async function randevulariYukle() {
+        const seciliTarih = document.getElementById('selected-date').value;
+        const baslangic = `${seciliTarih}T00:00:00`;
+        const bitis = `${seciliTarih}T23:59:59`;
+
+        const { data } = await supabaseClient
+            .from('randevular')
+            .select('*')
+            .gte('tarih_saat', baslangic)
+            .lte('tarih_saat', bitis)
+            .neq('durum', 'İptal');
+
+        const layer = document.getElementById('events-layer');
+        layer.innerHTML = '';
+
+        if(!data) return;
+        mevcutRandevular = data;
+
+        data.forEach(r => {
+            const saatString = r.tarih_saat.split('T')[1] || r.tarih_saat.split(' ')[1];
+            if (!saatString) return;
+
+            const [saatStr, dakStr] = saatString.split(':');
+            const saat = parseInt(saatStr, 10);
+            const dakika = parseInt(dakStr, 10);
+
+            const topPx = ((saat - SAAT_BASLANGIC) * 70) + ((dakika / 60
