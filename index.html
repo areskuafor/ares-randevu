@@ -80,6 +80,11 @@ h1{font-size:18px;color:var(--acc)}
 .sel{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px;border:1px solid #484035;background:#100f0d;color:var(--tx);border-radius:9px;font-size:14px;text-align:left;cursor:pointer}
 .sel span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sel.bos-sec span:first-child{color:#81796c}
+.chips#chips{flex-wrap:nowrap;flex-direction:column;gap:0;max-height:182px;overflow-y:auto;overscroll-behavior:contain;border:1px solid #484035;border-radius:9px;background:#100f0d;margin-top:6px}
+#chips .chip{display:flex;justify-content:space-between;align-items:center;width:100%;flex:0 0 auto;border:0;border-bottom:1px solid #28241d;border-radius:0;background:none;color:var(--tx);text-align:left;padding:13px 12px;font-size:14px}
+#chips .chip:last-child{border-bottom:0}
+#chips .chip.on{background:rgba(216,179,106,.18);color:var(--acc)}
+#chips .chip.on::after{content:'✓'}
 .chip.on{background:var(--gold);color:#171109;border-color:#f1d99b}
 .fab{display:none;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;background:var(--gold);color:#171109;border:1px solid #f1d99b;font-size:30px;font-weight:700;align-items:center;justify-content:center;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer}
 .big{display:block;width:100%;text-align:center;text-decoration:none;background:var(--gold);color:#171109;border:1px solid #f1d99b;padding:12px;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;margin-top:9px}
@@ -154,10 +159,10 @@ header{padding:10px 12px}
 <div class="ov" id="ovForm"><div class="card">
   <div class="mh"><h3 id="fBaslik">Yeni randevu</h3><button class="x" data-kapat aria-label="Kapat">&times;</button></div>
   <input type="hidden" id="eid">
+  <div class="f"><label for="m_tarih">Tarih</label><input type="date" id="m_tarih"></div>
   <div class="f"><label for="m_adi">Müşteri adı soyadı</label><input id="m_adi" list="musteriler" autocomplete="off"><datalist id="musteriler"></datalist></div>
   <div class="f"><label for="m_tel">Telefon</label><input id="m_tel" type="tel" placeholder="05xx xxx xx xx"></div>
   <div class="f"><label>Yapılacak işlem</label><button type="button" class="sel bos-sec" id="hizBtn"><span id="hizTxt">Yapılacak işlemi seçin</span><span>▾</span></button><div class="chips hidden" id="chips"></div><input id="m_diger" class="hidden" placeholder="Yapılacak işlemi yazın" style="margin-top:8px"></div>
-  <div class="f"><label for="m_tarih">Tarih</label><input type="date" id="m_tarih"></div>
   <div class="two">
     <div class="f"><label for="m_per">Personel</label><select id="m_per"></select></div>
     <div class="f"><label for="m_saat">Saat</label><input type="time" id="m_saat" step="900"></div>
