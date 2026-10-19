@@ -69,6 +69,9 @@ h1{font-size:18px;color:var(--acc)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
 .chip{background:#211d16;border:1px solid #51432c;color:#d8c9a7;border-radius:18px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.sel{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px;border:1px solid #484035;background:#100f0d;color:var(--tx);border-radius:9px;font-size:14px;text-align:left;cursor:pointer}
+.sel span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel.bos-sec span:first-child{color:#81796c}
 .chip.on{background:var(--gold);color:#171109;border-color:#f1d99b}
 .fab{display:none;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;background:var(--gold);color:#171109;border:1px solid #f1d99b;font-size:30px;font-weight:700;align-items:center;justify-content:center;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer}
 .big{display:block;width:100%;text-align:center;text-decoration:none;background:var(--gold);color:#171109;border:1px solid #f1d99b;padding:12px;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;margin-top:9px}
@@ -86,7 +89,7 @@ h1{font-size:18px;color:var(--acc)}
 header{padding:10px 12px}
 .badge{display:none}
 .ctl{padding:8px 10px}
-.ctl input,.ctl select,.f input,.f select{font-size:16px}
+.ctl input,.ctl select,.f input,.f select,.sel{font-size:16px}
 #yeni{display:none}
 .fab{display:flex}
 .row{flex-wrap:wrap}
@@ -144,7 +147,7 @@ header{padding:10px 12px}
   <input type="hidden" id="eid">
   <div class="f"><label for="m_adi">Müşteri adı soyadı</label><input id="m_adi" list="musteriler" autocomplete="off"><datalist id="musteriler"></datalist></div>
   <div class="f"><label for="m_tel">Telefon</label><input id="m_tel" type="tel" placeholder="05xx xxx xx xx"></div>
-  <div class="f"><label>Yapılacak işlem (birden fazla seçilebilir)</label><div class="chips" id="chips"></div><input id="m_diger" class="hidden" placeholder="Yapılacak işlemi yazın" style="margin-top:8px"></div>
+  <div class="f"><label>Yapılacak işlem</label><button type="button" class="sel bos-sec" id="hizBtn"><span id="hizTxt">Yapılacak işlemi seçin</span><span>▾</span></button><div class="chips hidden" id="chips"></div><input id="m_diger" class="hidden" placeholder="Yapılacak işlemi yazın" style="margin-top:8px"></div>
   <div class="two">
     <div class="f"><label for="m_per">Personel</label><select id="m_per"></select></div>
     <div class="f"><label for="m_saat">Saat</label><input type="time" id="m_saat" step="900"></div>
@@ -333,9 +336,17 @@ HIZMETLER.forEach(a => {
   c.onclick = () => {
     c.classList.toggle('on');
     if (a === 'DİĞER') { const d = $('m_diger'); d.classList.toggle('hidden', !c.classList.contains('on')); if (c.classList.contains('on')) d.focus(); }
+    hizmetOzet();
   };
   $('chips').appendChild(c);
 });
+$('hizBtn').onclick = () => $('chips').classList.toggle('hidden');
+$('m_diger').oninput = () => hizmetOzet();
+function hizmetOzet() {
+  const t = hizmetAl();
+  $('hizTxt').textContent = t || 'Yapılacak işlemi seçin';
+  $('hizBtn').classList.toggle('bos-sec', !t);
+}
 const chipler = () => [...document.querySelectorAll('#chips .chip')];
 function hizmetSec(str) {
   const parcalar = (str || '').split(' + ').map(x => x.trim()).filter(Boolean), diger = [];
@@ -344,6 +355,7 @@ function hizmetSec(str) {
   chipler().find(x => x.dataset.a === 'DİĞER').classList.toggle('on', diger.length > 0);
   $('m_diger').classList.toggle('hidden', !diger.length);
   $('m_diger').value = diger.join(' + ');
+  hizmetOzet();
 }
 function hizmetAl() {
   const sec = chipler().filter(c => c.classList.contains('on') && c.dataset.a !== 'DİĞER').map(c => c.dataset.a);
@@ -360,6 +372,7 @@ function formAc(r, saat, per) {
   $('m_adi').value = r ? r.musteri_adi || '' : '';
   $('m_tel').value = r ? r.telefon || '' : '';
   hizmetSec(r ? r.hizmet : '');
+  $('chips').classList.add('hidden');
   $('m_per').value = r ? r.islem_yapan_personel : (per || $('filtre').value || ben.ad_soyad);
   $('m_saat').value = r ? r.tarih_saat.slice(11, 16) : (saat || '10:00');
   $('m_kap').value = r ? r.kapora || 0 : 0;
