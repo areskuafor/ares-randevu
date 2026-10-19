@@ -1,957 +1,393 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ares Kuaför Pro Takvim</title>
-    
-    <!-- PWA / Ana Ekran ve Tarayıcı Logo (Favicon) Tanımları (JPG Destekli) -->
-    <link rel="icon" type="image/jpeg" href="logo.jpg">
-    <link rel="apple-touch-icon" href="logo.jpg">
-    <meta name="theme-color" content="#0f172a">
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-
-        :root {
-            --bg-color: #090909;
-            --card-bg: #151515;
-            --primary: #080808;
-            --accent: #d8b36a;
-            --accent-hover: #f0ce86;
-            --red: #a61f26;
-            --border: #393127;
-            --text-main: #f7f3ec;
-            --text-muted: #b8afa0;
-            --gold-soft: rgba(216, 179, 106, .13);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background:
-                radial-gradient(ellipse at top, rgba(166,31,38,.10), transparent 42%),
-                var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-
-        button, input, select { font: inherit; }
-        button { transition: background .18s ease, border-color .18s ease, transform .18s ease; }
-        button:focus-visible, input:focus-visible, select:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
-        }
-
-        /* Siyah ve altın premium üst bar */
-        header {
-            background: linear-gradient(110deg, #050505 0%, #17130d 100%);
-            color: var(--text-main);
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid rgba(216,179,106,.55);
-            box-shadow: 0 5px 22px rgba(0,0,0,.35);
-            z-index: 10;
-        }
-        header h1 {
-            font-size: 19px;
-            font-weight: 700;
-            letter-spacing: .2px;
-            color: var(--accent);
-        }
-        .header-right { display: flex; align-items: center; gap: 9px; }
-        .user-badge {
-            font-size: 12px;
-            background: rgba(216,179,106,.12);
-            color: #f3d99f;
-            border: 1px solid rgba(216,179,106,.32);
-            padding: 6px 11px;
-            border-radius: 20px;
-        }
-        .btn-logout {
-            background: rgba(166,31,38,.18);
-            color: #ffb5b5;
-            border: 1px solid rgba(214,70,76,.55);
-            padding: 7px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .btn-logout:hover { background: var(--red); color: white; }
-
-        /* Tarih ve filtre kontrolleri */
-        .top-controls {
-            background: #11100e;
-            border-bottom: 1px solid var(--border);
-            padding: 13px 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .controls-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-        }
-        .date-picker-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; }
-        .date-picker-wrap input {
-            border: 1px solid #51432c;
-            background: #1b1915;
-            color: var(--text-main);
-            padding: 8px 9px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            outline: none;
-            color-scheme: dark;
-            min-width: 0;
-        }
-        .btn-nav-date {
-            background: #211d16;
-            border: 1px solid #51432c;
-            padding: 7px 11px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            color: var(--accent);
-            font-size: 13px;
-        }
-        .btn-nav-date:hover { background: #33291a; }
-        .btn-today {
-            background: transparent;
-            color: var(--accent);
-            border: 1px solid var(--accent);
-            padding: 7px 10px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 12px;
-            white-space: nowrap;
-        }
-        .btn-today:hover { background: var(--gold-soft); }
-        .btn-add {
-            background: linear-gradient(135deg, #e7c77f, #c99b49);
-            color: #171109;
-            border: 1px solid #f1d99b;
-            padding: 9px 15px;
-            border-radius: 9px;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            white-space: nowrap;
-            box-shadow: 0 3px 12px rgba(216,179,106,.13);
-        }
-        .btn-add:hover { background: var(--accent-hover); transform: translateY(-1px); }
-        .filter-select {
-            border: 1px solid #51432c;
-            background: #1b1915;
-            color: var(--text-main);
-            padding: 8px 10px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            outline: none;
-            width: 100%;
-            max-width: 260px;
-            color-scheme: dark;
-        }
-        .summary-badge {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--accent);
-            background: var(--gold-soft);
-            border: 1px solid rgba(216,179,106,.25);
-            padding: 7px 11px;
-            border-radius: 8px;
-            white-space: nowrap;
-        }
-
-        /* Giriş ekranı */
-        #login-screen {
-            position: fixed;
-            inset: 0;
-            background:
-                radial-gradient(ellipse at 50% 20%, rgba(166,31,38,.22), transparent 48%),
-                linear-gradient(145deg, #050505, #17130d);
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .login-box {
-            background: linear-gradient(155deg, #191714, #0d0d0d);
-            color: var(--text-main);
-            padding: 30px;
-            border: 1px solid rgba(216,179,106,.4);
-            border-radius: 18px;
-            width: 100%;
-            max-width: 390px;
-            box-shadow: 0 18px 60px rgba(0,0,0,.48);
-        }
-        .login-logo {
-            width: 82px;
-            height: 82px;
-            object-fit: cover;
-            border-radius: 50%;
-            margin: 0 auto 16px;
-            display: block;
-            border: 2px solid var(--accent);
-            box-shadow: 0 0 24px rgba(216,179,106,.14);
-        }
-        .login-box h2 {
-            font-size: 22px;
-            text-align: center;
-            margin-bottom: 23px;
-            color: var(--accent);
-        }
-        .field { margin-bottom: 15px; }
-        .field label {
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--accent);
-            margin-bottom: 7px;
-            letter-spacing: .7px;
-            text-transform: uppercase;
-        }
-        .field input, .field select {
-            width: 100%;
-            padding: 11px 12px;
-            border: 1px solid #484035;
-            background: #100f0d;
-            color: var(--text-main);
-            border-radius: 9px;
-            font-size: 14px;
-            outline: none;
-            color-scheme: dark;
-        }
-        .field input::placeholder { color: #81796c; }
-        .field input:focus, .field select:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(216,179,106,.1);
-        }
-        .btn-login {
-            width: 100%;
-            background: linear-gradient(135deg, #e7c77f, #c99b49);
-            color: #171109;
-            border: 1px solid #f1d99b;
-            padding: 12px;
-            border-radius: 9px;
-            font-weight: 800;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 9px;
-            box-shadow: 0 4px 14px rgba(216,179,106,.12);
-        }
-        .btn-login:hover { background: var(--accent-hover); }
-
-        /* Günlük saat çizelgesi */
-        .timeline-container {
-            flex: 1;
-            min-height: 0;
-            overflow-y: auto;
-            overflow-x: auto;
-            position: relative;
-            display: flex;
-            background: #0c0c0c;
-            scrollbar-color: #64502f #111;
-        }
-        .time-column {
-            width: 64px;
-            min-width: 64px;
-            border-right: 1px solid #30291e;
-            background: #141310;
-            z-index: 2;
-        }
-        .time-slot-label {
-            height: 70px;
-            border-bottom: 1px solid #28241d;
-            font-size: 11px;
-            font-weight: 600;
-            color: #c7b994;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 8px;
-        }
-        .grid-content { flex: 1; min-width: 300px; position: relative; }
-        .grid-row {
-            height: 70px;
-            border-bottom: 1px solid #28241d;
-            cursor: pointer;
-            transition: background .15s ease;
-        }
-        .grid-row:hover { background: rgba(216,179,106,.045); }
-
-        /* Randevu kartları: altın kenar ve okunaklı metin */
-        .app-event {
-            position: absolute;
-            left: 8px;
-            right: 8px;
-            background: linear-gradient(110deg, #211d16, #171512);
-            border: 1px solid #4b3b23;
-            border-left: 4px solid var(--accent);
-            border-radius: 9px;
-            padding: 7px 10px;
-            box-shadow: 0 3px 10px rgba(0,0,0,.22);
-            cursor: pointer;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: transform .12s ease, box-shadow .12s ease;
-        }
-        .app-event:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 5px 15px rgba(0,0,0,.32);
-        }
-        .app-event:active { transform: scale(.99); }
-        .app-event .title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #f5d995;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .app-event .sub {
-            font-size: 11px;
-            color: #d2c9b8;
-            margin-top: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Randevu formu */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.76);
-            backdrop-filter: blur(4px);
-            z-index: 50;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .2s;
-        }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal-card {
-            background: linear-gradient(155deg, #191714, #0d0d0d);
-            color: var(--text-main);
-            width: 100%;
-            max-width: 500px;
-            border: 1px solid rgba(216,179,106,.35);
-            border-bottom: 0;
-            border-radius: 20px 20px 0 0;
-            padding: 21px;
-            max-height: 88vh;
-            overflow-y: auto;
-            transform: translateY(100%);
-            transition: transform .25s ease-out;
-            box-shadow: 0 -12px 40px rgba(0,0,0,.35);
-        }
-        .modal-overlay.active .modal-card { transform: translateY(0); }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-            border-bottom: 1px solid #3b3020;
-            padding-bottom: 12px;
-        }
-        .modal-header h3 { font-size: 17px; font-weight: 700; color: var(--accent); }
-        .close-btn {
-            background: rgba(166,31,38,.16);
-            border: 1px solid rgba(214,70,76,.35);
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            font-size: 21px;
-            font-weight: bold;
-            color: #ffb5b5;
-            cursor: pointer;
-        }
-        .close-btn:hover { background: var(--red); color: white; }
-        .hidden { display: none !important; }
-
-        /* Telefon ekranları */
-        @media (max-width: 640px) {
-            header { padding: 12px 13px; }
-            header h1 { font-size: 16px; }
-            .header-right { gap: 6px; }
-            .user-badge { max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-            .top-controls { padding: 10px; gap: 9px; }
-            .controls-row { gap: 7px; }
-            .date-picker-wrap { gap: 4px; flex: 1; }
-            .date-picker-wrap input { width: 128px; padding: 8px 5px; font-size: 12px; }
-            .btn-nav-date { padding: 7px 9px; }
-            .btn-today { padding: 7px 8px; }
-            .btn-add { padding: 9px 10px; font-size: 12px; }
-            .filter-select { max-width: none; min-width: 0; flex: 1; }
-            .summary-badge { font-size: 11px; padding: 7px 8px; }
-            .time-column { width: 52px; min-width: 52px; }
-            .time-slot-label { font-size: 10px; }
-            .grid-content { min-width: 270px; }
-            .app-event { left: 5px; right: 5px; padding: 6px 7px; }
-            .app-event .title { font-size: 12px; }
-            .app-event .sub { font-size: 10px; }
-            .modal-card { padding: 18px 16px calc(20px + env(safe-area-inset-bottom)); }
-            .login-box { padding: 25px 21px; }
-        }
-
-        @media (max-width: 380px) {
-            .date-picker-wrap input { width: 112px; }
-            .btn-today { font-size: 11px; padding: 7px 6px; }
-            .btn-add { padding: 8px; }
-            .user-badge { display: none; }
-        }
-
-
-        .mobile-bottom-nav { display: none; }
-
-        @media (max-width: 640px) {
-            .mobile-bottom-nav {
-                display: grid;
-                grid-template-columns: 1fr 1.35fr 1fr;
-                gap: 7px;
-                padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-                background: rgba(8,8,8,.97);
-                border-top: 1px solid rgba(216,179,106,.42);
-                box-shadow: 0 -6px 22px rgba(0,0,0,.32);
-                z-index: 20;
-            }
-            .mobile-bottom-nav button {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 3px;
-                min-height: 45px;
-                border: 1px solid #393127;
-                border-radius: 10px;
-                background: #171512;
-                color: #d8c9a7;
-                font-size: 10px;
-                font-weight: 600;
-                cursor: pointer;
-            }
-            .mobile-bottom-nav .nav-symbol {
-                font-size: 19px;
-                line-height: 1;
-                color: var(--accent);
-            }
-            .mobile-bottom-nav .mobile-nav-primary {
-                background: linear-gradient(135deg, #e7c77f, #c99b49);
-                color: #171109;
-                border-color: #f1d99b;
-            }
-            .mobile-bottom-nav .mobile-nav-primary .nav-symbol { color: #171109; }
-            .timeline-container { padding-bottom: 2px; }
-        }
-
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Ares Kuaför Pro Takvim</title>
+<link rel="icon" type="image/jpeg" href="logo.jpg">
+<link rel="apple-touch-icon" href="logo.jpg">
+<meta name="theme-color" content="#0f172a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#090909;--acc:#d8b36a;--red:#a61f26;--bd:#393127;--tx:#f7f3ec;--mut:#b8afa0;--gold:linear-gradient(135deg,#e7c77f,#c99b49)}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);display:flex;flex-direction:column;overflow:hidden}
+button,input,select{font:inherit;color-scheme:dark}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.hidden{display:none!important}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(110deg,#050505,#17130d);border-bottom:1px solid rgba(216,179,106,.55)}
+h1{font-size:18px;color:var(--acc)}
+.hr{display:flex;align-items:center;gap:8px}
+.badge{font-size:12px;color:#f3d99f;border:1px solid rgba(216,179,106,.32);background:rgba(216,179,106,.12);padding:6px 11px;border-radius:20px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-out{background:rgba(166,31,38,.18);color:#ffb5b5;border:1px solid rgba(214,70,76,.55);padding:7px 10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
+.ctl{background:#11100e;border-bottom:1px solid var(--bd);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.ctl input,.ctl select,.nav{border:1px solid #51432c;background:#1b1915;color:var(--tx);padding:8px;border-radius:8px;font-size:13px;font-weight:600;min-width:0}
+.nav{color:var(--acc);cursor:pointer}
+.today{background:none;border:1px solid var(--acc);color:var(--acc);padding:7px 9px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer}
+.add{background:var(--gold);color:#171109;border:1px solid #f1d99b;padding:9px 13px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+.sum{font-size:12px;font-weight:700;color:var(--acc);background:rgba(216,179,106,.13);padding:7px 10px;border-radius:8px;white-space:nowrap}
+.chk{font-size:12px;color:var(--mut);display:flex;gap:5px;align-items:center;white-space:nowrap}
+.chk input{width:auto}
+#ara{flex:1}
+/* Çizelge: her personel ayrı sütun */
+#board{flex:1;min-height:0;overflow:auto;display:flex;background:#0c0c0c;position:relative}
+.tcol{position:sticky;left:0;z-index:3;width:52px;min-width:52px;background:#141310;border-right:1px solid #30291e}
+.pcol{flex:1;min-width:150px;border-right:1px solid #28241d}
+.phead{position:sticky;top:0;z-index:2;height:34px;display:flex;align-items:center;justify-content:center;background:#141310;border-bottom:1px solid var(--bd);font-size:12px;font-weight:700;padding:0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tcol .phead{z-index:4}
+.tl{height:70px;border-bottom:1px solid #28241d;font-size:10px;font-weight:600;color:#c7b994;display:flex;justify-content:center;padding-top:8px}
+.pbody{position:relative;cursor:pointer;background:repeating-linear-gradient(to bottom,transparent 0,transparent 69px,#28241d 69px,#28241d 70px)}
+.ev{position:absolute;left:4px;right:4px;background:linear-gradient(110deg,#211d16,#171512);border:1px solid #4b3b23;border-left:4px solid var(--acc);border-radius:8px;padding:5px 7px;overflow:hidden;cursor:pointer}
+.ev .t{font-size:12px;font-weight:700;color:#f5d995;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev .s{font-size:10px;color:#d2c9b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev.iptal{opacity:.45;text-decoration:line-through}
+.now{position:absolute;left:0;right:0;height:2px;background:#e5484d;z-index:1;pointer-events:none}
+/* Pencereler */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:50;display:flex;justify-content:center;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
+.ov.on{opacity:1;pointer-events:auto}
+.card{background:linear-gradient(155deg,#191714,#0d0d0d);width:100%;max-width:500px;border:1px solid rgba(216,179,106,.35);border-bottom:0;border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto;transform:translateY(100%);transition:transform .25s}
+.ov.on .card{transform:none}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #3b3020}
+.mh h3{font-size:17px;color:var(--acc)}
+.x{background:rgba(166,31,38,.16);border:1px solid rgba(214,70,76,.35);width:32px;height:32px;border-radius:8px;font-size:20px;color:#ffb5b5;cursor:pointer}
+.f{margin-bottom:12px}
+.f label{display:block;font-size:11px;font-weight:700;color:var(--acc);margin-bottom:6px}
+.f input,.f select{width:100%;padding:11px;border:1px solid #484035;background:#100f0d;color:var(--tx);border-radius:9px;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.chip{background:#211d16;border:1px solid #51432c;color:var(--acc);border-radius:16px;padding:5px 10px;font-size:12px;cursor:pointer}
+.big{display:block;width:100%;text-align:center;text-decoration:none;background:var(--gold);color:#171109;border:1px solid #f1d99b;padding:12px;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;margin-top:9px}
+.big.alt{background:#211d16;color:var(--acc);border-color:#51432c}
+.big.red{background:rgba(166,31,38,.25);color:#ffb5b5;border-color:rgba(214,70,76,.55)}
+.info{font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:6px}
+.res{padding:11px;border:1px solid var(--bd);border-radius:9px;margin-bottom:7px;cursor:pointer;font-size:13px}
+#login{position:fixed;inset:0;z-index:100;display:flex;justify-content:center;align-items:center;padding:20px;background:radial-gradient(ellipse at 50% 20%,rgba(166,31,38,.22),transparent 48%),linear-gradient(145deg,#050505,#17130d)}
+.lbox{background:linear-gradient(155deg,#191714,#0d0d0d);padding:28px;border:1px solid rgba(216,179,106,.4);border-radius:18px;width:100%;max-width:380px}
+.lbox img{width:80px;height:80px;object-fit:cover;border-radius:50%;margin:0 auto 14px;display:block;border:2px solid var(--acc)}
+.lbox h2{text-align:center;color:var(--acc);margin-bottom:20px;font-size:21px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2a2216;border:1px solid var(--acc);color:var(--tx);padding:10px 16px;border-radius:10px;font-size:13px;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+#toast.on{opacity:1}
+@media(max-width:640px){.badge{display:none}.pcol{min-width:135px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
 </head>
 <body>
 
-    <!-- GİRİŞ EKRANI -->
-    <div id="login-screen">
-        <form class="login-box" onsubmit="girisYap(event)">
-            <img src="logo.jpg" alt="Ares Kuaför Logo" class="login-logo">
-            <h2>Ares Kuaför Pro</h2>
-            <div class="field">
-                <label>Kullanıcı Adı</label>
-                <input type="text" id="username" placeholder="" autocapitalize="words" autocorrect="off">
-            </div>
-            <div class="field">
-                <label>Şifre</label>
-                <input type="password" id="password" placeholder="" autocapitalize="words" autocorrect="off">
-            </div>
-            <button type="submit" class="btn-login">Sisteme Giriş Yap</button>
-        </form>
+<div id="login">
+  <form class="lbox" id="lform">
+    <img src="logo.jpg" alt="Ares Kuaför">
+    <h2>Ares Kuaför Pro</h2>
+    <div class="f"><label for="u">Kullanıcı adı</label><input id="u" autocomplete="username" autocapitalize="none" autocorrect="off"></div>
+    <div class="f"><label for="p">Şifre</label><input id="p" type="password" autocomplete="current-password"></div>
+    <button class="big" type="submit">Giriş yap</button>
+  </form>
+</div>
+
+<header>
+  <h1>Ares Kuaför</h1>
+  <div class="hr"><div class="badge" id="kim"></div><button class="btn-out" id="cikis">Çıkış</button></div>
+</header>
+
+<div class="ctl">
+  <div class="row">
+    <div class="row" style="justify-content:flex-start">
+      <button class="nav" id="geri" aria-label="Önceki gün">&lt;</button>
+      <input type="date" id="tarih" style="width:128px">
+      <button class="nav" id="ileri" aria-label="Sonraki gün">&gt;</button>
+      <button class="today" id="bugun">Bugün</button>
     </div>
+    <button class="add" id="yeni">+ Yeni randevu</button>
+  </div>
+  <div class="row">
+    <select id="filtre" style="flex:1"><option value="">Tüm personeller</option></select>
+    <label class="chk"><input type="checkbox" id="iptalGoster">İptalleri göster</label>
+    <div class="sum" id="ozet">0 randevu</div>
+  </div>
+  <div class="row"><input id="ara" type="search" placeholder="Müşteri adı veya telefon ara, Enter'a bas"></div>
+</div>
 
-    <!-- ANA PANEL -->
-    <header>
-        <h1>Ares Kuaför</h1>
-        <div class="header-right">
-            <div class="user-badge" id="user-display">Personel</div>
-            <button class="btn-logout" onclick="cikisYap()" title="Çıkış Yap">Çıkış</button>
-        </div>
-    </header>
+<div id="board"></div>
 
-    <div class="top-controls">
-        <div class="controls-row">
-            <div class="date-picker-wrap">
-                <button class="btn-nav-date" onclick="tarihDegistir(-1)">&lt;</button>
-                <input type="date" id="selected-date" onchange="randevulariYukle()">
-                <button class="btn-nav-date" onclick="tarihDegistir(1)">&gt;</button>
-                <button class="btn-today" onclick="buguneGit()">Bugün</button>
-            </div>
-            <button class="btn-add" onclick="modalAc(false)">+ Yeni Randevu</button>
-        </div>
-        <div class="controls-row">
-            <select id="filter_personel" class="filter-select" onchange="randevulariYukle()">
-                <option value="">Tüm Personeller</option>
-            </select>
-            <div class="summary-badge" id="daily-summary">0 Randevu</div>
-        </div>
-    </div>
+<!-- Randevu formu -->
+<div class="ov" id="ovForm"><div class="card">
+  <div class="mh"><h3 id="fBaslik">Yeni randevu</h3><button class="x" data-kapat aria-label="Kapat">&times;</button></div>
+  <input type="hidden" id="eid">
+  <div class="f"><label for="m_adi">Müşteri adı soyadı</label><input id="m_adi" list="musteriler" autocomplete="off"><datalist id="musteriler"></datalist></div>
+  <div class="f"><label for="m_tel">Telefon</label><input id="m_tel" type="tel" placeholder="05xx xxx xx xx"></div>
+  <div class="f"><label for="m_hiz">Yapılacak işlem</label><input id="m_hiz"><div class="chips" id="chips"></div></div>
+  <div class="two">
+    <div class="f"><label for="m_per">Personel</label><select id="m_per"></select></div>
+    <div class="f"><label for="m_sure">Süre</label><select id="m_sure"></select></div>
+  </div>
+  <div class="two">
+    <div class="f"><label for="m_saat">Saat</label><input type="time" id="m_saat" step="900"></div>
+    <div class="f"><label for="m_kap">Kapora (₺)</label><input type="number" id="m_kap" min="0" value="0" inputmode="decimal"></div>
+  </div>
+  <label class="chk" style="margin-bottom:12px"><input type="checkbox" id="m_odendi">Kapora ödendi</label>
+  <div class="f"><label for="m_not">Özel not</label><input id="m_not"></div>
+  <button class="big" id="kaydet">Randevuyu kaydet</button>
+</div></div>
 
-    <!-- SAATLİK ÇİZELGE -->
-    <div class="timeline-container">
-        <div class="time-column" id="time-labels"></div>
-        <div class="grid-content" id="grid-content">
-            <div id="grid-rows"></div>
-            <div id="events-layer"></div>
-        </div>
-    </div>
+<!-- İşlem penceresi ve arama sonuçları -->
+<div class="ov" id="ovSheet"><div class="card">
+  <div class="mh"><h3 id="sBaslik"></h3><button class="x" data-kapat aria-label="Kapat">&times;</button></div>
+  <div id="sIcerik"></div>
+</div></div>
 
-
-    <!-- Mobil hızlı menü: mevcut randevu fonksiyonlarını kullanır -->
-    <nav class="mobile-bottom-nav" aria-label="Hızlı işlemler">
-        <button type="button" onclick="buguneGit()">
-            <span class="nav-symbol">⌂</span><span>Bugün</span>
-        </button>
-        <button type="button" class="mobile-nav-primary" onclick="modalAc(false)">
-            <span class="nav-symbol">＋</span><span>Randevu Ekle</span>
-        </button>
-        <button type="button" onclick="document.getElementById('filter_personel').focus()">
-            <span class="nav-symbol">♙</span><span>Personel</span>
-        </button>
-    </nav>
-
-    <!-- POP-UP (MODAL) FORM -->
-    <div class="modal-overlay" id="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3 id="modal-title">Yeni Randevu Oluştur</h3>
-                <button class="close-btn" onclick="modalKapat()">&times;</button>
-            </div>
-            
-            <input type="hidden" id="edit_randevu_id" value="">
-
-            <div class="field">
-                <label>Müşteri Adı Soyadı</label>
-                <input type="text" id="m_adi" placeholder="Örn: Ayşe Yılmaz">
-            </div>
-            <div class="field">
-                <label>Telefon</label>
-                <input type="text" id="m_tel" placeholder="05xx xxx xx xx">
-            </div>
-            <div class="field">
-                <label>Yapılacak İşlem</label>
-                <input type="text" id="m_hizmet" placeholder="Örn: Mikro Kaynak, Boya">
-            </div>
-            <div class="field">
-                <label>İşlemi Yapacak Personel</label>
-                <select id="m_personel_select">
-                    <!-- Personeller dinamik yüklenecek -->
-                </select>
-            </div>
-            <div class="field">
-                <label>Saat</label>
-                <input type="time" id="m_saat" value="10:00">
-            </div>
-            <div class="field">
-                <label>Özel Not / Kapora Bilgisi</label>
-                <input type="text" id="m_not" placeholder="">
-            </div>
-
-            <button class="btn-login" id="btn-submit" style="margin-top:15px;" onclick="randevuKaydet()">Randevuyu Kaydet & Bildir</button>
-        </div>
-    </div>
+<div id="toast" role="status"></div>
 
 <script>
-    const SUPABASE_URL = 'https://pomcbxgouhfvpdgwyepq.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_kpfQg9YJAh28CTTJxKgsEw_JP3Nqz-f';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = supabase.createClient('https://pomcbxgouhfvpdgwyepq.supabase.co', 'sb_publishable_kpfQg9YJAh28CTTJxKgsEw_JP3Nqz-f');
+const S0 = 8, S1 = 21, H = 70;
+const RENK = ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'];
+const HIZMET = [['Kesim',30],['Fön',30],['Boya',120],['Mikro kaynak',180],['Manikür',60],['Bakım',45]];
+let ben = null, personel = [], rands = [], musteriMap = {}, ilkKaydir = true, kanal = null;
 
-    let aktifUser = null;
-    let personelListesi = [];
-    let mevcutRandevular = [];
-    const SAAT_BASLANGIC = 8;
-    const SAAT_BITIS = 21;
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const yerel = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const dk = s => { const [h, m] = s.split(':'); return +h * 60 + +m; };
+const trTarih = t => t.split('-').reverse().join('.');
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 3200); }
+const yetkili = r => ben && (ben.rol === 'yonetici' || String(r.personel_id) === String(ben.id));
 
-    // Personel Renk Kodları
-    const PERSONEL_RENKLERI = [
-        '#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'
-    ];
+/* ---------- Giriş / çıkış (Supabase Auth) ---------- */
+$('lform').onsubmit = async e => {
+  e.preventDefault();
+  const u = $('u').value.trim().toLowerCase(), p = $('p').value;
+  if (!u || !p) return toast('Kullanıcı adı ve şifre girin');
+  const { error } = await sb.auth.signInWithPassword({ email: u + '@ares.app', password: p });
+  if (error) return toast('Hatalı kullanıcı adı veya şifre');
+  $('p').value = '';
+  basla();
+};
+$('cikis').onclick = async () => {
+  if (!confirm('Çıkış yapmak istiyor musunuz?')) return;
+  await sb.auth.signOut();
+  if (kanal) sb.removeChannel(kanal);
+  ben = null; $('login').classList.remove('hidden');
+};
 
-    document.getElementById('selected-date').value = new Date().toISOString().split('T')[0];
-    cizelgeOlustur();
-    oturumKontrol();
+async function basla() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return $('login').classList.remove('hidden');
+  const { data, error } = await sb.from('personeller').select('id,ad_soyad,rol,auth_id');
+  if (error) return toast('Personel listesi alınamadı');
+  personel = data || [];
+  ben = personel.find(p => p.auth_id === session.user.id);
+  if (!ben) { await sb.auth.signOut(); return toast('Hesabınız personel listesine bağlı değil'); }
+  $('login').classList.add('hidden');
+  $('kim').textContent = ben.ad_soyad;
+  const f = $('filtre'), m = $('m_per');
+  f.replaceChildren(new Option('Tüm personeller', ''));
+  m.replaceChildren();
+  personel.forEach(p => { f.add(new Option(p.ad_soyad, p.ad_soyad)); m.add(new Option(p.ad_soyad, p.ad_soyad)); });
+  musterileriYukle();
+  await yukle();
+  if (!kanal) kanal = sb.channel('canli').on('postgres_changes', { event: '*', schema: 'public', table: 'randevular' }, () => yukle()).subscribe();
+}
 
-    function oturumKontrol() {
-        const kayitli = localStorage.getItem('ares_aktif_user');
-        if (kayitli) {
-            try {
-                aktifUser = JSON.parse(kayitli);
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('user-display').innerText = aktifUser.ad_soyad;
-                personelleriYukle();
-                randevulariYukle();
-            } catch(e) {
-                localStorage.removeItem('ares_aktif_user');
-            }
-        }
+/* ---------- Tarih gezinme ---------- */
+function gunDegis(n) { const [y, m, d] = $('tarih').value.split('-').map(Number); $('tarih').value = yerel(new Date(y, m - 1, d + n)); ilkKaydir = true; yukle(); }
+$('geri').onclick = () => gunDegis(-1);
+$('ileri').onclick = () => gunDegis(1);
+$('bugun').onclick = () => { $('tarih').value = yerel(); ilkKaydir = true; yukle(); };
+$('tarih').onchange = () => { ilkKaydir = true; yukle(); };
+$('filtre').onchange = ciz;
+$('iptalGoster').onchange = yukle;
+$('tarih').value = yerel();
+
+/* ---------- Veri ---------- */
+async function yukle() {
+  if (!ben) return;
+  const t = $('tarih').value;
+  let q = sb.from('randevular').select('*').gte('tarih_saat', t + 'T00:00:00').lte('tarih_saat', t + 'T23:59:59').order('tarih_saat');
+  if (!$('iptalGoster').checked) q = q.neq('durum', 'İptal');
+  const { data, error } = await q;
+  if (error) return toast('Randevular yüklenemedi: ' + error.message);
+  rands = data || [];
+  ciz();
+}
+
+async function musterileriYukle() {
+  const { data } = await sb.from('randevular').select('musteri_adi,telefon').order('id', { ascending: false }).limit(500);
+  musteriMap = {};
+  (data || []).forEach(r => { if (r.musteri_adi && !(r.musteri_adi in musteriMap)) musteriMap[r.musteri_adi] = r.telefon || ''; });
+  const dl = $('musteriler'); dl.replaceChildren();
+  Object.keys(musteriMap).forEach(a => { const o = document.createElement('option'); o.value = a; dl.appendChild(o); });
+}
+$('m_adi').oninput = () => { const t = musteriMap[$('m_adi').value]; if (t && !$('m_tel').value) $('m_tel').value = t; };
+
+/* ---------- Çizelge ---------- */
+function ciz() {
+  const f = $('filtre').value, bugun = $('tarih').value === yerel();
+  const adlar = f ? [f] : [...new Set([...personel.map(p => p.ad_soyad), ...rands.map(r => r.islem_yapan_personel).filter(Boolean)])];
+  const B = $('board'); B.replaceChildren();
+  const tc = el('div', 'tcol'); tc.appendChild(el('div', 'phead'));
+  for (let h = S0; h <= S1; h++) tc.appendChild(el('div', 'tl', pad(h) + ':00'));
+  B.appendChild(tc);
+  const toplam = $('tarih').value;
+  adlar.forEach(ad => {
+    const ci = Math.max(0, personel.findIndex(p => p.ad_soyad === ad)), renk = RENK[ci % RENK.length];
+    const c = el('div', 'pcol'), hd = el('div', 'phead', ad); hd.style.color = renk; c.appendChild(hd);
+    const b = el('div', 'pbody'); b.style.height = (S1 - S0 + 1) * H + 'px';
+    b.onclick = e => {
+      const m = Math.floor(((e.offsetY / H) * 60) / 30) * 30;
+      formAc(null, pad(S0 + Math.floor(m / 60)) + ':' + pad(m % 60), ad);
+    };
+    const liste = rands.filter(r => r.islem_yapan_personel === ad), seritler = [], yer = new Map();
+    liste.forEach(r => {
+      const bas = dk(r.tarih_saat.slice(11, 16)), bit = bas + (r.islem_suresi_dk || 60);
+      let i = seritler.findIndex(x => x <= bas); if (i < 0) i = seritler.length;
+      seritler[i] = bit; yer.set(r, i);
+    });
+    liste.forEach(r => {
+      const s = r.tarih_saat.slice(11, 16), top = (dk(s) - S0 * 60) / 60 * H;
+      if (top < 0) return;
+      const d = r.islem_suresi_dk || 60, iptal = r.durum === 'İptal';
+      const e = el('div', 'ev' + (iptal ? ' iptal' : ''));
+      const w = 100 / seritler.length;
+      e.style.cssText = `top:${top}px;height:${Math.max(d / 60 * H - 2, 30)}px;border-left-color:${renk};left:calc(${yer.get(r) * w}% + 3px);right:auto;width:calc(${w}% - 6px)`;
+      e.append(el('div', 't', s + ' ' + r.musteri_adi),
+               el('div', 's', r.hizmet + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')));
+      e.onclick = ev => { ev.stopPropagation(); islemAc(r); };
+      b.appendChild(e);
+    });
+    if (bugun) {
+      const n = new Date(), top = (n.getHours() * 60 + n.getMinutes() - S0 * 60) / 60 * H;
+      if (top >= 0 && top <= (S1 - S0 + 1) * H) { const l = el('div', 'now'); l.style.top = top + 'px'; b.appendChild(l); }
     }
+    c.appendChild(b); B.appendChild(c);
+  });
+  $('ozet').textContent = rands.filter(r => r.durum !== 'İptal' && (!f || r.islem_yapan_personel === f)).length + ' randevu';
+  if (ilkKaydir) {
+    ilkKaydir = false;
+    const n = new Date(), hedef = bugun ? (n.getHours() * 60 + n.getMinutes() - S0 * 60) / 60 * H - 120 : 0;
+    B.scrollTop = Math.max(0, hedef);
+  }
+}
 
-    function cikisYap() {
-        if(confirm("Sistemden çıkış yapmak istediğinize emin misiniz?")) {
-            localStorage.removeItem('ares_aktif_user');
-            aktifUser = null;
-            document.getElementById('login-screen').classList.remove('hidden');
-        }
+/* ---------- Pencereler ---------- */
+const ac = id => $(id).classList.add('on');
+const kapat = () => document.querySelectorAll('.ov').forEach(o => o.classList.remove('on'));
+document.querySelectorAll('[data-kapat]').forEach(b => b.onclick = kapat);
+document.querySelectorAll('.ov').forEach(o => o.onclick = e => { if (e.target === o) kapat(); });
+$('yeni').onclick = () => formAc();
+
+// Süre seçenekleri ve hızlı hizmet butonları
+for (let m = 15; m <= 300; m += 15) $('m_sure').add(new Option(m >= 60 ? `${Math.floor(m/60)} sa${m % 60 ? ' ' + m % 60 + ' dk' : ''}` : m + ' dk', m));
+HIZMET.forEach(([a, d]) => {
+  const c = el('button', 'chip', `${a} (${d} dk)`); c.type = 'button';
+  c.onclick = () => { $('m_hiz').value = a; $('m_sure').value = d; };
+  $('chips').appendChild(c);
+});
+
+function formAc(r, saat, per) {
+  $('eid').value = r ? r.id : '';
+  $('fBaslik').textContent = r ? 'Randevuyu düzenle' : 'Yeni randevu';
+  $('kaydet').textContent = r ? 'Değişiklikleri kaydet' : 'Randevuyu kaydet';
+  $('m_adi').value = r ? r.musteri_adi || '' : '';
+  $('m_tel').value = r ? r.telefon || '' : '';
+  $('m_hiz').value = r ? r.hizmet || '' : '';
+  $('m_per').value = r ? r.islem_yapan_personel : (per || $('filtre').value || ben.ad_soyad);
+  $('m_sure').value = r ? r.islem_suresi_dk || 60 : 60;
+  $('m_saat').value = r ? r.tarih_saat.slice(11, 16) : (saat || '10:00');
+  $('m_kap').value = r ? r.kapora || 0 : 0;
+  $('m_odendi').checked = r ? !!r.kapora_odendi : false;
+  $('m_not').value = r ? r.notlar || '' : '';
+  kapat(); ac('ovForm');
+}
+
+function sheet(baslik, nodes) { $('sBaslik').textContent = baslik; $('sIcerik').replaceChildren(...nodes); kapat(); ac('ovSheet'); }
+function btn(txt, cls, fn, href) {
+  const b = el(href ? 'a' : 'button', 'big ' + (cls || ''), txt);
+  if (href) b.href = href; else b.onclick = fn;
+  return b;
+}
+const wa = t => { let n = t.replace(/\D/g, ''); if (n.startsWith('0')) n = '9' + n; else if (!n.startsWith('90')) n = '90' + n; return n; };
+
+function islemAc(r) {
+  const saat = r.tarih_saat.slice(11, 16), tarih = trTarih(r.tarih_saat.slice(0, 10));
+  const n = [el('div', 'info', `${tarih} ${saat} • ${r.islem_suresi_dk || 60} dk • ${r.islem_yapan_personel || ''}`),
+             el('div', 'info', `İşlem: ${r.hizmet}${r.telefon ? ' • ' + r.telefon : ''}${r.notlar ? ' • Not: ' + r.notlar : ''}`)];
+  if (r.durum === 'İptal') {
+    n.push(el('div', 'info', 'İptal nedeni: ' + (r.iptal_nedeni || 'belirtilmedi')));
+    if (yetkili(r)) n.push(btn('İptali geri al', '', () => durumDegis(r, 'Aktif', null)));
+  } else {
+    if (yetkili(r)) n.push(btn('Düzenle', '', () => formAc(r)));
+    if (r.telefon) {
+      n.push(btn('Müşteriyi ara', 'alt', null, 'tel:' + r.telefon));
+      n.push(btn('WhatsApp mesajı', 'alt', null, `https://wa.me/${wa(r.telefon)}`));
+      const msg = `Merhaba ${r.musteri_adi}, ${tarih} saat ${saat} için Ares Kuaför randevunuzu hatırlatmak isteriz. Görüşmek üzere.`;
+      n.push(btn('Hatırlatma gönder (WhatsApp)', 'alt', null, `https://wa.me/${wa(r.telefon)}?text=${encodeURIComponent(msg)}`));
     }
-
-    function buguneGit() {
-        document.getElementById('selected-date').value = new Date().toISOString().split('T')[0];
-        randevulariYukle();
+    if (yetkili(r)) {
+      const nd = el('input'); nd.placeholder = 'İptal nedeni (isteğe bağlı)'; nd.style.cssText = 'width:100%;margin-top:12px;padding:11px;border:1px solid #484035;background:#100f0d;color:#f7f3ec;border-radius:9px';
+      n.push(nd, btn('Randevuyu iptal et', 'red', () => durumDegis(r, 'İptal', nd.value.trim())));
     }
+  }
+  sheet(r.musteri_adi, n);
+}
 
-    function tarihDegistir(gun) {
-        const dateInput = document.getElementById('selected-date');
-        const d = new Date(dateInput.value || new Date());
-        d.setDate(d.getDate() + gun);
-        dateInput.value = d.toISOString().split('T')[0];
-        randevulariYukle();
-    }
+async function durumDegis(r, durum, neden) {
+  const { error } = await sb.from('randevular').update({ durum, iptal_nedeni: neden }).eq('id', r.id);
+  if (error) return toast('İşlem başarısız: ' + error.message);
+  if (durum === 'İptal') bildir(r, 'iptal', neden);
+  kapat(); toast(durum === 'İptal' ? 'Randevu iptal edildi' : 'Randevu geri alındı'); yukle();
+}
 
-    function cizelgeOlustur() {
-        const labels = document.getElementById('time-labels');
-        const rows = document.getElementById('grid-rows');
-        labels.innerHTML = '';
-        rows.innerHTML = '';
+/* ---------- Kaydet (önce kayıt, sonra bildirim) ---------- */
+$('kaydet').onclick = async () => {
+  const eid = $('eid').value, tarih = $('tarih').value;
+  const v = {
+    musteri_adi: $('m_adi').value.trim(), telefon: $('m_tel').value.trim(), hizmet: $('m_hiz').value.trim(),
+    islem_yapan_personel: $('m_per').value, islem_suresi_dk: +$('m_sure').value,
+    kapora: +$('m_kap').value || 0, kapora_odendi: $('m_odendi').checked, notlar: $('m_not').value.trim()
+  };
+  const saat = $('m_saat').value;
+  if (!v.musteri_adi || !v.hizmet || !saat) return toast('Müşteri adı, işlem ve saat zorunludur');
+  v.tarih_saat = `${tarih}T${saat}:00`;
 
-        for (let i = SAAT_BASLANGIC; i <= SAAT_BITIS; i++) {
-            const timeStr = (i < 10 ? '0' + i : i) + ':00';
-            const label = document.createElement('div');
-            label.className = 'time-slot-label';
-            label.innerText = timeStr;
-            labels.appendChild(label);
+  let error;
+  if (eid) ({ error } = await sb.from('randevular').update(v).eq('id', eid));
+  else ({ error } = await sb.from('randevular').insert([{ ...v, personel_id: ben.id, durum: 'Aktif' }]));
+  if (error) return toast('Kayıt hatası: ' + error.message);
 
-            const row = document.createElement('div');
-            row.className = 'grid-row';
-            row.title = timeStr + ' saatine randevu ekle';
-            row.onclick = () => {
-                modalAc(false);
-                document.getElementById('m_saat').value = timeStr;
-            };
-            rows.appendChild(row);
-        }
-    }
+  bildir({ ...v, tarih: trTarih(tarih), saat }, eid ? 'guncelleme' : 'yeni');
+  kapat(); toast('Randevu kaydedildi'); yukle(); musterileriYukle();
+};
 
-    async function girisYap(event) {
-        if(event) event.preventDefault();
+// Telegram token tarayıcıda yok: Edge Function üzerinden gönderilir
+function bildir(r, tur, neden) {
+  const tarih = r.tarih || trTarih(r.tarih_saat.slice(0, 10)), saat = r.saat || r.tarih_saat.slice(11, 16);
+  sb.functions.invoke('bildirim', { body: { ...r, tarih, saat, tur, iptal_nedeni: neden || '' } })
+    .catch(() => toast('Bildirim gönderilemedi'));
+}
 
-        const u = document.getElementById('username').value.trim();
-        const p = document.getElementById('password').value.trim();
+/* ---------- Arama ---------- */
+$('ara').onkeydown = async e => {
+  if (e.key !== 'Enter') return;
+  const k = $('ara').value.trim().replace(/[%,()]/g, '');
+  if (k.length < 2) return toast('En az 2 karakter girin');
+  const { data, error } = await sb.from('randevular').select('*').or(`musteri_adi.ilike.%${k}%,telefon.ilike.%${k}%`).order('tarih_saat', { ascending: false }).limit(30);
+  if (error) return toast('Arama başarısız');
+  const n = (data || []).map(r => {
+    const d = el('div', 'res', `${trTarih(r.tarih_saat.slice(0, 10))} ${r.tarih_saat.slice(11, 16)} • ${r.musteri_adi} • ${r.hizmet}${r.durum === 'İptal' ? ' (iptal)' : ''}`);
+    d.onclick = () => { $('tarih').value = r.tarih_saat.slice(0, 10); ilkKaydir = true; kapat(); yukle(); };
+    return d;
+  });
+  if (!n.length) n.push(el('div', 'info', 'Sonuç bulunamadı'));
+  sheet('Arama sonuçları', n);
+};
 
-        if(!u || !p) { alert('Lütfen bilgileri girin'); return; }
-
-        const { data, error } = await supabaseClient
-            .from('personeller')
-            .select('*')
-            .eq('kullanici_adi', u)
-            .eq('sifre', p);
-
-        if (error || !data || data.length === 0) {
-            alert('Hatalı kullanıcı adı veya şifre!');
-        } else {
-            aktifUser = data[0];
-            localStorage.setItem('ares_aktif_user', JSON.stringify(aktifUser));
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('user-display').innerText = aktifUser.ad_soyad;
-            personelleriYukle();
-            randevulariYukle();
-        }
-    }
-
-    async function personelleriYukle() {
-        const { data } = await supabaseClient.from('personeller').select('*');
-        if(data) {
-            personelListesi = data;
-            const select = document.getElementById('m_personel_select');
-            const filterSelect = document.getElementById('filter_personel');
-            
-            const prevFilter = filterSelect.value;
-
-            select.innerHTML = '';
-            filterSelect.innerHTML = '<option value="">Tüm Personeller</option>';
-
-            data.forEach((p, index) => {
-                const opt = document.createElement('option');
-                opt.value = p.ad_soyad;
-                opt.innerText = p.ad_soyad;
-                select.appendChild(opt);
-
-                const filterOpt = document.createElement('option');
-                filterOpt.value = p.ad_soyad;
-                filterOpt.innerText = p.ad_soyad;
-                filterSelect.appendChild(filterOpt);
-            });
-
-            if (prevFilter) filterSelect.value = prevFilter;
-        }
-    }
-
-    function modalAc(isEdit = false, randevuData = null) { 
-        document.getElementById('modal-overlay').classList.add('active'); 
-        if(isEdit && randevuData) {
-            document.getElementById('modal-title').innerText = "Randevuyu Düzenle";
-            document.getElementById('btn-submit').innerText = "Değişiklikleri Kaydet & Bildir";
-            document.getElementById('edit_randevu_id').value = randevuData.id;
-            document.getElementById('m_adi').value = randevuData.musteri_adi || '';
-            document.getElementById('m_tel').value = randevuData.telefon || '';
-            document.getElementById('m_hizmet').value = randevuData.hizmet || '';
-            document.getElementById('m_personel_select').value = randevuData.islem_yapan_personel || '';
-            
-            const saatParcasi = randevuData.tarih_saat.split('T')[1] || randevuData.tarih_saat.split(' ')[1];
-            if(saatParcasi) {
-                document.getElementById('m_saat').value = saatParcasi.substring(0, 5);
-            }
-            document.getElementById('m_not').value = randevuData.notlar || '';
-        } else {
-            document.getElementById('modal-title').innerText = "Yeni Randevu Oluştur";
-            document.getElementById('btn-submit').innerText = "Randevuyu Kaydet & Bildir";
-            document.getElementById('edit_randevu_id').value = "";
-            document.getElementById('m_adi').value = '';
-            document.getElementById('m_tel').value = '';
-            document.getElementById('m_hizmet').value = '';
-            document.getElementById('m_not').value = '';
-            document.getElementById('m_saat').value = '10:00';
-        }
-    }
-    
-    function modalKapat() { document.getElementById('modal-overlay').classList.remove('active'); }
-
-    // Otomatik Telegram Bildirimi (Ekleme / Güncelleme Uyumlu)
-    async function sendTelegramNotification(randevuObj, isUpdate = false) {
-        const TELEGRAM_BOT_TOKEN = '8932934663:AAEqhcs4JhxlxJyIA0tA1vnGBSDjlQ0f3CE';
-        const TELEGRAM_CHAT_ID = '-5429836951';
-
-        const baslik = isUpdate ? "✏️ *Randevu Güncellendi!*" : "🔔 *Yeni Randevu Talebi!*";
-
-        const message = baslik + "\n\n" +
-                        "👤 *Müşteri:* " + randevuObj.musteri_adi + "\n" +
-                        "📞 *Telefon:* " + (randevuObj.telefon || 'Belirtilmedi') + "\n" +
-                        "💇‍♂️ *Personel:* " + randevuObj.islem_yapan_personel + "\n" +
-                        "✂️ *İşlem:* " + randevuObj.hizmet + "\n" +
-                        "📅 *Tarih:* " + randevuObj.tarih + "\n" +
-                        "⏰ *Saat:* " + randevuObj.saat + "\n" +
-                        (randevuObj.notlar ? "📝 *Not:* " + randevuObj.notlar + "\n" : "") +
-                        "\n📌 *İşlem Yapan:* " + (aktifUser ? aktifUser.ad_soyad : 'Sistem') +
-                        "\n\n🌐 *Tüm Randevuları Gör:* https://areskuafor.com.tr/ares-randevu/";
-
-        try {
-            await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: TELEGRAM_CHAT_ID,
-                    text: message,
-                    parse_mode: 'Markdown'
-                })
-            });
-        } catch (error) {
-            console.error('Telegram gönderim hatası:', error);
-        }
-    }
-
-    async function randevuKaydet() {
-        const editId = document.getElementById('edit_randevu_id').value;
-        const musteri_adi = document.getElementById('m_adi').value.trim();
-        const telefon = document.getElementById('m_tel').value.trim();
-        const hizmet = document.getElementById('m_hizmet').value.trim();
-        const selectEl = document.getElementById('m_personel_select');
-        const islem_yapan_personel = selectEl.value;
-        const saat = document.getElementById('m_saat').value;
-        const notlar = document.getElementById('m_not').value.trim();
-        const tarih = document.getElementById('selected-date').value;
-
-        if(!musteri_adi || !hizmet || !saat) {
-            alert('Müşteri adı, işlem ve saat zorunludur.');
-            return;
-        }
-
-        const tarihSaatISO = `${tarih}T${saat}:00`;
-        const isUpdate = !!editId;
-
-        sendTelegramNotification({
-            musteri_adi,
-            telefon,
-            hizmet,
-            islem_yapan_personel,
-            tarih,
-            saat,
-            notlar
-        }, isUpdate);
-
-        let error = null;
-
-        if(isUpdate) {
-            const res = await supabaseClient.from('randevular').update({
-                musteri_adi,
-                telefon,
-                hizmet,
-                islem_yapan_personel,
-                tarih_saat: tarihSaatISO,
-                notlar
-            }).eq('id', editId);
-            error = res.error;
-        } else {
-            const res = await supabaseClient.from('randevular').insert([{
-                musteri_adi,
-                telefon,
-                hizmet,
-                islem_yapan_personel,
-                tarih_saat: tarihSaatISO,
-                islem_suresi_dk: 60,
-                notlar,
-                personel_id: aktifUser ? aktifUser.id : null,
-                durum: 'Aktif'
-            }]);
-            error = res.error;
-        }
-
-        if(error) {
-            alert('Supabase İşlem Hatası: ' + error.message);
-        } else {
-            modalKapat();
-
-            document.getElementById('m_adi').value = '';
-            document.getElementById('m_tel').value = '';
-            document.getElementById('m_hizmet').value = '';
-            document.getElementById('m_not').value = '';
-            document.getElementById('edit_randevu_id').value = '';
-            
-            randevulariYukle();
-        }
-    }
-
-    async function randevulariYukle() {
-        const seciliTarih = document.getElementById('selected-date').value;
-        const seciliPersonel = document.getElementById('filter_personel').value;
-        const baslangic = `${seciliTarih}T00:00:00`;
-        const bitis = `${seciliTarih}T23:59:59`;
-
-        let query = supabaseClient
-            .from('randevular')
-            .select('*')
-            .gte('tarih_saat', baslangic)
-            .lte('tarih_saat', bitis)
-            .neq('durum', 'İptal');
-
-        if (seciliPersonel) {
-            query = query.eq('islem_yapan_personel', seciliPersonel);
-        }
-
-        const { data } = await query;
-
-        const layer = document.getElementById('events-layer');
-        layer.innerHTML = '';
-
-        if(!data) {
-            document.getElementById('daily-summary').innerText = '0 Randevu';
-            return;
-        }
-
-        mevcutRandevular = data;
-        document.getElementById('daily-summary').innerText = `${data.length} Randevu`;
-
-        data.forEach(r => {
-            const saatString = r.tarih_saat.split('T')[1] || r.tarih_saat.split(' ')[1];
-            if (!saatString) return;
-
-            const [saatStr, dakStr] = saatString.split(':');
-            const saat = parseInt(saatStr, 10);
-            const dakika = parseInt(dakStr, 10);
-
-            const topPx = ((saat - SAAT_BASLANGIC) * 70) + ((dakika / 60) * 70);
-            const heightPx = 65;
-
-            if(topPx >= 0) {
-                const el = document.createElement('div');
-                el.className = 'app-event';
-                el.style.top = topPx + 'px';
-                el.style.height = heightPx + 'px';
-                
-                // Personel Bazlı Renk Belirleme
-                const pIndex = personelListesi.findIndex(p => p.ad_soyad === r.islem_yapan_personel);
-                const color = pIndex >= 0 ? PERSONEL_RENKLERI[pIndex % PERSONEL_RENKLERI.length] : 'var(--accent)';
-                el.style.borderLeftColor = color;
-
-                const saatFormat = (saat < 10 ? '0'+saat : saat) + ':' + (dakika < 10 ? '0'+dakika : dakika);
-
-                el.innerHTML = `
-                    <div>
-                        <div class="title">${saatFormat} - ${r.musteri_adi}</div>
-                        <div class="sub"><b>İşlem:</b> ${r.hizmet} ${r.islem_yapan_personel ? ' | 👤 ' + r.islem_yapan_personel : ''}</div>
-                    </div>
-                `;
-
-                el.onclick = (e) => {
-                    e.stopPropagation(); // Satır tıklama olayını engeller
-                    randevuSecimAksiyonu(r);
-                };
-
-                layer.appendChild(el);
-            }
-        });
-    }
-
-    function randevuSecimAksiyonu(randevu) {
-        let mesaj = `${randevu.musteri_adi} randevusu için yapmak istediğiniz işlemi seçin:\n\n1 - Randevuyu Düzenle\n2 - Randevuyu İptal Et`;
-        if (randevu.telefon) {
-            mesaj += `\n3 - Müşteriyi Ara (${randevu.telefon})\n4 - WhatsApp'tan Mesaj Gönder`;
-        }
-        mesaj += `\n\n(Vazgeçmek için İptal'e basın)`;
-
-        const secim = prompt(mesaj, "1");
-
-        if (secim === "1") {
-            modalAc(true, randevu);
-        } else if (secim === "2") {
-            if(confirm(`${randevu.musteri_adi} randevusunu iptal etmek istediğinize emin misiniz?`)) {
-                randevuIptal(randevu.id);
-            }
-        } else if (secim === "3" && randevu.telefon) {
-            window.location.href = "tel:" + randevu.telefon;
-        } else if (secim === "4" && randevu.telefon) {
-            let tel = randevu.telefon.replace(/[^0-9]/g, '');
-            if(tel.startsWith('0')) tel = '9' + tel;
-            if(!tel.startsWith('90')) tel = '90' + tel;
-            const text = encodeURIComponent(`Merhaba ${randevu.musteri_adi}, Ares Kuaför randevunuz ile ilgili iletişime geçiyoruz.`);
-            window.open(`https://wa.me/${tel}?text=${text}`, '_blank');
-        }
-    }
-
-    async function randevuIptal(id) {
-        await supabaseClient.from('randevular').update({ durum: 'İptal' }).eq('id', id);
-        randevulariYukle();
-    }
+// Her dakika "şimdi" çizgisini güncelle
+setInterval(() => { if ($('tarih').value === yerel() && ben) ciz(); }, 60000);
+sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') $('login').classList.remove('hidden'); });
+basla();
 </script>
-
 </body>
 </html>
