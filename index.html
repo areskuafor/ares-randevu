@@ -6,7 +6,12 @@
 <title>Ares Kuaför Pro Takvim</title>
 <link rel="icon" type="image/jpeg" href="logo.jpg">
 <link rel="apple-touch-icon" href="logo.jpg">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#080808">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ares Randevu">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -152,6 +157,7 @@ header{padding:10px 12px}
   <div class="f"><label for="m_adi">Müşteri adı soyadı</label><input id="m_adi" list="musteriler" autocomplete="off"><datalist id="musteriler"></datalist></div>
   <div class="f"><label for="m_tel">Telefon</label><input id="m_tel" type="tel" placeholder="05xx xxx xx xx"></div>
   <div class="f"><label>Yapılacak işlem</label><button type="button" class="sel bos-sec" id="hizBtn"><span id="hizTxt">Yapılacak işlemi seçin</span><span>▾</span></button><div class="chips hidden" id="chips"></div><input id="m_diger" class="hidden" placeholder="Yapılacak işlemi yazın" style="margin-top:8px"></div>
+  <div class="f"><label for="m_tarih">Tarih</label><input type="date" id="m_tarih"></div>
   <div class="two">
     <div class="f"><label for="m_per">Personel</label><select id="m_per"></select></div>
     <div class="f"><label for="m_saat">Saat</label><input type="time" id="m_saat" step="900"></div>
@@ -385,6 +391,7 @@ function formAc(r, saat, per) {
   hizmetSec(r ? r.hizmet : '');
   $('chips').classList.add('hidden');
   $('m_per').value = r ? r.islem_yapan_personel : (per || $('filtre').value || ben.ad_soyad);
+  $('m_tarih').value = r ? r.tarih_saat.slice(0, 10) : $('tarih').value;
   $('m_saat').value = r ? r.tarih_saat.slice(11, 16) : (saat || '10:00');
   $('m_kap').value = r ? r.kapora || 0 : 0;
   $('m_odendi').checked = r ? !!r.kapora_odendi : false;
@@ -432,14 +439,14 @@ async function durumDegis(r, durum, neden) {
 
 /* ---------- Kaydet (önce kayıt, sonra bildirim) ---------- */
 $('kaydet').onclick = async () => {
-  const eid = $('eid').value, tarih = $('tarih').value;
+  const eid = $('eid').value, tarih = $('m_tarih').value;
   const v = {
     musteri_adi: $('m_adi').value.trim(), telefon: $('m_tel').value.trim(), hizmet: hizmetAl(),
     islem_yapan_personel: $('m_per').value,
     kapora: +$('m_kap').value || 0, kapora_odendi: $('m_odendi').checked, notlar: $('m_not').value.trim()
   };
   const saat = $('m_saat').value;
-  if (!v.musteri_adi || !v.hizmet || !saat) return toast('Müşteri adı, işlem ve saat zorunludur');
+  if (!v.musteri_adi || !v.hizmet || !saat || !tarih) return toast('Müşteri adı, işlem, tarih ve saat zorunludur');
   v.tarih_saat = `${tarih}T${saat}:00`;
 
   let error;
@@ -448,6 +455,7 @@ $('kaydet').onclick = async () => {
   if (error) return toast('Kayıt hatası: ' + error.message);
 
   bildir({ ...v, tarih: trTarih(tarih), saat }, eid ? 'guncelleme' : 'yeni');
+  $('tarih').value = tarih; ilkKaydir = true;
   kapat(); toast('Randevu kaydedildi'); yukle(); musterileriYukle();
 };
 
@@ -486,6 +494,7 @@ $('ara').onkeydown = async e => {
 setInterval(() => { if ($('tarih').value === yerel() && ben) ciz(); }, 60000);
 sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') $('login').classList.remove('hidden'); });
 basla();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>
