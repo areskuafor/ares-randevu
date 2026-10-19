@@ -13,72 +13,463 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+
         :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --primary: #0f172a;
-            --accent: #2563eb;
-            --border: #e2e8f0;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
+            --bg-color: #090909;
+            --card-bg: #151515;
+            --primary: #080808;
+            --accent: #d8b36a;
+            --accent-hover: #f0ce86;
+            --red: #a61f26;
+            --border: #393127;
+            --text-main: #f7f3ec;
+            --text-muted: #b8afa0;
+            --gold-soft: rgba(216, 179, 106, .13);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        /* Üst Bar */
-        header { background: var(--primary); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; }
-        header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
-        .header-right { display: flex; align-items: center; gap: 8px; }
-        .user-badge { font-size: 13px; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; }
-        .btn-logout { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); padding: 4px 8px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600; }
+        body {
+            background:
+                radial-gradient(ellipse at top, rgba(166,31,38,.10), transparent 42%),
+                var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-height: 100vh;
+            overflow: hidden;
+        }
 
-        /* Kontrol Barları */
-        .top-controls { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; }
-        .controls-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; }
-        .date-picker-wrap { display: flex; align-items: center; gap: 4px; }
-        .date-picker-wrap input { border: 1px solid var(--border); padding: 6px 10px; border-radius: 8px; font-weight: 600; color: var(--text-main); font-size: 14px; outline: none; }
-        .btn-nav-date { background: #f1f5f9; border: 1px solid var(--border); padding: 6px 10px; border-radius: 8px; font-weight: 700; cursor: pointer; color: var(--text-main); font-size: 13px; }
-        .btn-today { background: #e0e7ff; color: var(--accent); border: 1px solid #c7d2fe; padding: 6px 10px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; }
-        .btn-add { background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
-        .filter-select { border: 1px solid var(--border); padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-main); outline: none; background: #fff; width: 100%; max-width: 220px; }
-        .summary-badge { font-size: 12px; font-weight: 600; color: var(--text-muted); background: #f1f5f9; padding: 5px 10px; border-radius: 6px; }
+        button, input, select { font: inherit; }
+        button { transition: background .18s ease, border-color .18s ease, transform .18s ease; }
+        button:focus-visible, input:focus-visible, select:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
 
-        /* Giriş Ekranı */
-        #login-screen { position: fixed; inset: 0; background: var(--primary); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .login-box { background: white; padding: 28px; border-radius: 16px; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .login-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; margin: 0 auto 16px auto; display: block; border: 2px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .login-box h2 { font-size: 22px; text-align: center; margin-bottom: 20px; color: var(--primary); }
-        .field { margin-bottom: 14px; }
-        .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
-        .field input, .field select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; }
-        .btn-login { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px; }
+        /* Siyah ve altın premium üst bar */
+        header {
+            background: linear-gradient(110deg, #050505 0%, #17130d 100%);
+            color: var(--text-main);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(216,179,106,.55);
+            box-shadow: 0 5px 22px rgba(0,0,0,.35);
+            z-index: 10;
+        }
+        header h1 {
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: .2px;
+            color: var(--accent);
+        }
+        .header-right { display: flex; align-items: center; gap: 9px; }
+        .user-badge {
+            font-size: 12px;
+            background: rgba(216,179,106,.12);
+            color: #f3d99f;
+            border: 1px solid rgba(216,179,106,.32);
+            padding: 6px 11px;
+            border-radius: 20px;
+        }
+        .btn-logout {
+            background: rgba(166,31,38,.18);
+            color: #ffb5b5;
+            border: 1px solid rgba(214,70,76,.55);
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-logout:hover { background: var(--red); color: white; }
 
-        /* Çizelge */
-        .timeline-container { flex: 1; overflow-y: auto; overflow-x: auto; position: relative; display: flex; background: var(--card-bg); }
-        .time-column { width: 60px; min-width: 60px; border-right: 1px solid var(--border); background: #f1f5f9; z-index: 2; }
-        .time-slot-label { height: 70px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; }
-        
+        /* Tarih ve filtre kontrolleri */
+        .top-controls {
+            background: #11100e;
+            border-bottom: 1px solid var(--border);
+            padding: 13px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .date-picker-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; }
+        .date-picker-wrap input {
+            border: 1px solid #51432c;
+            background: #1b1915;
+            color: var(--text-main);
+            padding: 8px 9px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            outline: none;
+            color-scheme: dark;
+            min-width: 0;
+        }
+        .btn-nav-date {
+            background: #211d16;
+            border: 1px solid #51432c;
+            padding: 7px 11px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 13px;
+        }
+        .btn-nav-date:hover { background: #33291a; }
+        .btn-today {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .btn-today:hover { background: var(--gold-soft); }
+        .btn-add {
+            background: linear-gradient(135deg, #e7c77f, #c99b49);
+            color: #171109;
+            border: 1px solid #f1d99b;
+            padding: 9px 15px;
+            border-radius: 9px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 3px 12px rgba(216,179,106,.13);
+        }
+        .btn-add:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .filter-select {
+            border: 1px solid #51432c;
+            background: #1b1915;
+            color: var(--text-main);
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            width: 100%;
+            max-width: 260px;
+            color-scheme: dark;
+        }
+        .summary-badge {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            background: var(--gold-soft);
+            border: 1px solid rgba(216,179,106,.25);
+            padding: 7px 11px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        /* Giriş ekranı */
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 50% 20%, rgba(166,31,38,.22), transparent 48%),
+                linear-gradient(145deg, #050505, #17130d);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .login-box {
+            background: linear-gradient(155deg, #191714, #0d0d0d);
+            color: var(--text-main);
+            padding: 30px;
+            border: 1px solid rgba(216,179,106,.4);
+            border-radius: 18px;
+            width: 100%;
+            max-width: 390px;
+            box-shadow: 0 18px 60px rgba(0,0,0,.48);
+        }
+        .login-logo {
+            width: 82px;
+            height: 82px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            display: block;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 24px rgba(216,179,106,.14);
+        }
+        .login-box h2 {
+            font-size: 22px;
+            text-align: center;
+            margin-bottom: 23px;
+            color: var(--accent);
+        }
+        .field { margin-bottom: 15px; }
+        .field label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 7px;
+            letter-spacing: .7px;
+            text-transform: uppercase;
+        }
+        .field input, .field select {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #484035;
+            background: #100f0d;
+            color: var(--text-main);
+            border-radius: 9px;
+            font-size: 14px;
+            outline: none;
+            color-scheme: dark;
+        }
+        .field input::placeholder { color: #81796c; }
+        .field input:focus, .field select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(216,179,106,.1);
+        }
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, #e7c77f, #c99b49);
+            color: #171109;
+            border: 1px solid #f1d99b;
+            padding: 12px;
+            border-radius: 9px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 9px;
+            box-shadow: 0 4px 14px rgba(216,179,106,.12);
+        }
+        .btn-login:hover { background: var(--accent-hover); }
+
+        /* Günlük saat çizelgesi */
+        .timeline-container {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: auto;
+            position: relative;
+            display: flex;
+            background: #0c0c0c;
+            scrollbar-color: #64502f #111;
+        }
+        .time-column {
+            width: 64px;
+            min-width: 64px;
+            border-right: 1px solid #30291e;
+            background: #141310;
+            z-index: 2;
+        }
+        .time-slot-label {
+            height: 70px;
+            border-bottom: 1px solid #28241d;
+            font-size: 11px;
+            font-weight: 600;
+            color: #c7b994;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 8px;
+        }
         .grid-content { flex: 1; min-width: 300px; position: relative; }
-        .grid-row { height: 70px; border-bottom: 1px solid var(--border); cursor: pointer; }
-        .grid-row:hover { background: #f8fafc; }
+        .grid-row {
+            height: 70px;
+            border-bottom: 1px solid #28241d;
+            cursor: pointer;
+            transition: background .15s ease;
+        }
+        .grid-row:hover { background: rgba(216,179,106,.045); }
 
-        /* Randevu Kartları */
-        .app-event { position: absolute; left: 8px; right: 8px; background: #eff6ff; border-left: 4px solid var(--accent); border-radius: 6px; padding: 6px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.06); cursor: pointer; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.1s; }
-        .app-event:active { transform: scale(0.98); }
-        .app-event .title { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .app-event .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        /* Randevu kartları: altın kenar ve okunaklı metin */
+        .app-event {
+            position: absolute;
+            left: 8px;
+            right: 8px;
+            background: linear-gradient(110deg, #211d16, #171512);
+            border: 1px solid #4b3b23;
+            border-left: 4px solid var(--accent);
+            border-radius: 9px;
+            padding: 7px 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,.22);
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform .12s ease, box-shadow .12s ease;
+        }
+        .app-event:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0,0,0,.32);
+        }
+        .app-event:active { transform: scale(.99); }
+        .app-event .title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #f5d995;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .app-event .sub {
+            font-size: 11px;
+            color: #d2c9b8;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-        /* Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        /* Randevu formu */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.76);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+        }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal-card { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 20px; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.25s ease-out; }
+        .modal-card {
+            background: linear-gradient(155deg, #191714, #0d0d0d);
+            color: var(--text-main);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid rgba(216,179,106,.35);
+            border-bottom: 0;
+            border-radius: 20px 20px 0 0;
+            padding: 21px;
+            max-height: 88vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform .25s ease-out;
+            box-shadow: 0 -12px 40px rgba(0,0,0,.35);
+        }
         .modal-overlay.active .modal-card { transform: translateY(0); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .modal-header h3 { font-size: 17px; font-weight: 700; }
-        .close-btn { background: none; border: none; font-size: 20px; font-weight: bold; color: var(--text-muted); cursor: pointer; }
-
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            border-bottom: 1px solid #3b3020;
+            padding-bottom: 12px;
+        }
+        .modal-header h3 { font-size: 17px; font-weight: 700; color: var(--accent); }
+        .close-btn {
+            background: rgba(166,31,38,.16);
+            border: 1px solid rgba(214,70,76,.35);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 21px;
+            font-weight: bold;
+            color: #ffb5b5;
+            cursor: pointer;
+        }
+        .close-btn:hover { background: var(--red); color: white; }
         .hidden { display: none !important; }
+
+        /* Telefon ekranları */
+        @media (max-width: 640px) {
+            header { padding: 12px 13px; }
+            header h1 { font-size: 16px; }
+            .header-right { gap: 6px; }
+            .user-badge { max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .top-controls { padding: 10px; gap: 9px; }
+            .controls-row { gap: 7px; }
+            .date-picker-wrap { gap: 4px; flex: 1; }
+            .date-picker-wrap input { width: 128px; padding: 8px 5px; font-size: 12px; }
+            .btn-nav-date { padding: 7px 9px; }
+            .btn-today { padding: 7px 8px; }
+            .btn-add { padding: 9px 10px; font-size: 12px; }
+            .filter-select { max-width: none; min-width: 0; flex: 1; }
+            .summary-badge { font-size: 11px; padding: 7px 8px; }
+            .time-column { width: 52px; min-width: 52px; }
+            .time-slot-label { font-size: 10px; }
+            .grid-content { min-width: 270px; }
+            .app-event { left: 5px; right: 5px; padding: 6px 7px; }
+            .app-event .title { font-size: 12px; }
+            .app-event .sub { font-size: 10px; }
+            .modal-card { padding: 18px 16px calc(20px + env(safe-area-inset-bottom)); }
+            .login-box { padding: 25px 21px; }
+        }
+
+        @media (max-width: 380px) {
+            .date-picker-wrap input { width: 112px; }
+            .btn-today { font-size: 11px; padding: 7px 6px; }
+            .btn-add { padding: 8px; }
+            .user-badge { display: none; }
+        }
+
+
+        .mobile-bottom-nav { display: none; }
+
+        @media (max-width: 640px) {
+            .mobile-bottom-nav {
+                display: grid;
+                grid-template-columns: 1fr 1.35fr 1fr;
+                gap: 7px;
+                padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+                background: rgba(8,8,8,.97);
+                border-top: 1px solid rgba(216,179,106,.42);
+                box-shadow: 0 -6px 22px rgba(0,0,0,.32);
+                z-index: 20;
+            }
+            .mobile-bottom-nav button {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 3px;
+                min-height: 45px;
+                border: 1px solid #393127;
+                border-radius: 10px;
+                background: #171512;
+                color: #d8c9a7;
+                font-size: 10px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .mobile-bottom-nav .nav-symbol {
+                font-size: 19px;
+                line-height: 1;
+                color: var(--accent);
+            }
+            .mobile-bottom-nav .mobile-nav-primary {
+                background: linear-gradient(135deg, #e7c77f, #c99b49);
+                color: #171109;
+                border-color: #f1d99b;
+            }
+            .mobile-bottom-nav .mobile-nav-primary .nav-symbol { color: #171109; }
+            .timeline-container { padding-bottom: 2px; }
+        }
+
     </style>
 </head>
 <body>
@@ -135,6 +526,20 @@
             <div id="events-layer"></div>
         </div>
     </div>
+
+
+    <!-- Mobil hızlı menü: mevcut randevu fonksiyonlarını kullanır -->
+    <nav class="mobile-bottom-nav" aria-label="Hızlı işlemler">
+        <button type="button" onclick="buguneGit()">
+            <span class="nav-symbol">⌂</span><span>Bugün</span>
+        </button>
+        <button type="button" class="mobile-nav-primary" onclick="modalAc(false)">
+            <span class="nav-symbol">＋</span><span>Randevu Ekle</span>
+        </button>
+        <button type="button" onclick="document.getElementById('filter_personel').focus()">
+            <span class="nav-symbol">♙</span><span>Personel</span>
+        </button>
+    </nav>
 
     <!-- POP-UP (MODAL) FORM -->
     <div class="modal-overlay" id="modal-overlay">
