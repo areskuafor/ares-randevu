@@ -75,7 +75,7 @@
 
     <!-- GİRİŞ EKRANI -->
     <div id="login-screen">
-        <div class="login-box">
+        <form class="login-box" onsubmit="girisYap(event)">
             <img src="logo.jpg" alt="Ares Kuaför Logo" class="login-logo">
             <h2>Ares Kuaför Pro</h2>
             <div class="field">
@@ -86,8 +86,8 @@
                 <label>Şifre</label>
                 <input type="password" id="password" placeholder="" autocapitalize="words" autocorrect="off">
             </div>
-            <button class="btn-login" onclick="girisYap()">Sisteme Giriş Yap</button>
-        </div>
+            <button type="submit" class="btn-login">Sisteme Giriş Yap</button>
+        </form>
     </div>
 
     <!-- ANA PANEL -->
@@ -186,7 +186,9 @@
         }
     }
 
-    async function girisYap() {
+    async function girisYap(event) {
+        if(event) event.preventDefault(); // Sayfanın Enter'a basınca yenilenmesini önler
+
         const u = document.getElementById('username').value.trim();
         const p = document.getElementById('password').value.trim();
 
