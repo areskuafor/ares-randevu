@@ -192,29 +192,20 @@
 
         if(!u || !p) { alert('Lütfen bilgileri girin'); return; }
 
-        try {
-            const { data, error } = await supabaseClient
-                .from('personeller')
-                .select('*')
-                .eq('kullanici_adi', u)
-                .eq('sifre', p);
+        const { data, error } = await supabaseClient
+            .from('personeller')
+            .select('*')
+            .eq('kullanici_adi', u)
+            .eq('sifre', p);
 
-            if (error) {
-                alert('Veritabanı hatası: ' + error.message);
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                alert('Hatalı kullanıcı adı veya şifre!');
-            } else {
-                aktifUser = data[0];
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('user-display').innerText = aktifUser.ad_soyad;
-                personelleriYukle();
-                randevulariYukle();
-            }
-        } catch (e) {
-            alert('Giriş yapılırken bir hata oluştu: ' + e.message);
+        if (error || !data || data.length === 0) {
+            alert('Hatalı kullanıcı adı veya şifre!');
+        } else {
+            aktifUser = data[0];
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('user-display').innerText = aktifUser.ad_soyad;
+            personelleriYukle();
+            randevulariYukle();
         }
     }
 
@@ -244,6 +235,7 @@
             document.getElementById('m_hizmet').value = randevuData.hizmet || '';
             document.getElementById('m_personel_select').value = randevuData.islem_yapan_personel || '';
             
+            // Saat bilgisini metin parçalama ile alma (UTC kaymasını önler)
             const saatParcasi = randevuData.tarih_saat.split('T')[1] || randevuData.tarih_saat.split(' ')[1];
             if(saatParcasi) {
                 document.getElementById('m_saat').value = saatParcasi.substring(0, 5);
@@ -263,6 +255,7 @@
     
     function modalKapat() { document.getElementById('modal-overlay').classList.remove('active'); }
 
+    // Otomatik Telegram Bildirimi (Ekleme / Güncelleme Uyumlu)
     async function sendTelegramNotification(randevuObj, isUpdate = false) {
         const TELEGRAM_BOT_TOKEN = '8932934663:AAEqhcs4JhxlxJyIA0tA1vnGBSDjlQ0f3CE';
         const TELEGRAM_CHAT_ID = '-5429836951';
@@ -314,6 +307,7 @@
         const tarihSaatISO = `${tarih}T${saat}:00`;
         const isUpdate = !!editId;
 
+        // Telegram bildirimini tetikle
         sendTelegramNotification({
             musteri_adi,
             telefon,
@@ -327,6 +321,7 @@
         let error = null;
 
         if(isUpdate) {
+            // Randevu Güncelleme
             const res = await supabaseClient.from('randevular').update({
                 musteri_adi,
                 telefon,
@@ -337,6 +332,7 @@
             }).eq('id', editId);
             error = res.error;
         } else {
+            // Yeni Randevu Ekleme
             const res = await supabaseClient.from('randevular').insert([{
                 musteri_adi,
                 telefon,
@@ -356,6 +352,7 @@
         } else {
             modalKapat();
 
+            // Formu Temizle
             document.getElementById('m_adi').value = '';
             document.getElementById('m_tel').value = '';
             document.getElementById('m_hizmet').value = '';
@@ -385,6 +382,7 @@
         mevcutRandevular = data;
 
         data.forEach(r => {
+            // Metin parçalama yöntemi ile doğrudan saat ve dakikayı alıyoruz (UTC +3 kaymasını engeller)
             const saatString = r.tarih_saat.split('T')[1] || r.tarih_saat.split(' ')[1];
             if (!saatString) return;
 
@@ -392,4 +390,53 @@
             const saat = parseInt(saatStr, 10);
             const dakika = parseInt(dakStr, 10);
 
-            const topPx = ((saat - SAAT_BASLANGIC) * 70) + ((dakika / 60
+            const topPx = ((saat - SAAT_BASLANGIC) * 70) + ((dakika / 60) * 70);
+            const heightPx = 65;
+
+            if(topPx >= 0) {
+                const el = document.createElement('div');
+                el.className = 'app-event';
+                el.style.top = topPx + 'px';
+                el.style.height = heightPx + 'px';
+                
+                const saatFormat = (saat < 10 ? '0'+saat : saat) + ':' + (dakika < 10 ? '0'+dakika : dakika);
+
+                el.innerHTML = `
+                    <div>
+                        <div class="title">${saatFormat} - ${r.musteri_adi}</div>
+                        <div class="sub"><b>İşlem:</b> ${r.hizmet} ${r.islem_yapan_personel ? ' | 👤 ' + r.islem_yapan_personel : ''}</div>
+                    </div>
+                `;
+
+                el.onclick = () => {
+                    randevuSecimAksiyonu(r);
+                };
+
+                layer.appendChild(el);
+            }
+        });
+    }
+
+    function randevuSecimAksiyonu(randevu) {
+        const secim = prompt(
+            `${randevu.musteri_adi} randevusu için yapmak istediğiniz işlemi seçin:\n\n1 - Randevuyu Düzenle\n2 - Randevuyu İptal Et\n\n(Vazgeçmek için İptal'e basın)`,
+            "1"
+        );
+
+        if (secim === "1") {
+            modalAc(true, randevu);
+        } else if (secim === "2") {
+            if(confirm(`${randevu.musteri_adi} randevusunu iptal etmek istediğinize emin misiniz?`)) {
+                randevuIptal(randevu.id);
+            }
+        }
+    }
+
+    async function randevuIptal(id) {
+        await supabaseClient.from('randevular').update({ durum: 'İptal' }).eq('id', id);
+        randevulariYukle();
+    }
+</script>
+
+</body>
+</html>
