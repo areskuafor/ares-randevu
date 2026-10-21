@@ -214,9 +214,9 @@ $('lform').onsubmit = async e => {
   const u = $('u').value.trim().toLowerCase(), p =$('p').value;
   if (!u || !p) return toast('Kullanıcı adı ve şifre girin');
   
-  const { error } = await sb.auth.signInWithPassword({ email: u + '@ares.app', password: p });
+  const { data, error } = await sb.auth.signInWithPassword({ email: u + '@ares.app', password: p });
   if (error) {
-    alert('Giriş başarısız: ' + error.message);
+    alert('Supabase Giriş Hatası: ' + error.message);
     return toast('Hatalı kullanıcı adı veya şifre');
   }
   $('p').value = '';
@@ -236,17 +236,17 @@ async function basla() {
 
   const { data, error } = await sb.from('personeller').select('*');
   if (error) {
-    alert('Personeller tablosu okunamadı: ' + error.message);
+    alert('Veritabanı Okuma Hatası (personeller): ' + error.message);
     return toast('Personel listesi alınamadı');
   }
   
   personel = data || [];
   
-  // UUID esnek eşleştirme
-  ben = personel.find(p => p.auth_id && String(p.auth_id).toLowerCase() === String(session.user.id).toLowerCase());
+  // UUID esnek ve güvenli eşleştirme
+  ben = personel.find(p => p.auth_id && String(p.auth_id).trim().toLowerCase() === String(session.user.id).trim().toLowerCase());
 
   if (!ben) {
-    alert('DİKKAT: Giriş yapan hesabın UID kodu (' + session.user.id + ') personeller tablosundaki auth_id alanıyla eşleşmiyor!');
+    alert('EŞLEŞME HATASI:\nGiriş Yapan User UID: ' + session.user.id + '\n\nTablodaki personellerin auth_id değerleri:\n' + personel.map(p => p.ad_soyad + ': ' + p.auth_id).join('\n'));
     await sb.auth.signOut();
     return toast('Hesabınız personel listesine bağlı değil');
   }
