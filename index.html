@@ -356,7 +356,7 @@ $('btnPersonelKaydet').onclick = async () => {
   basla();
 };
 
-/* ---------- Randevu Ekleme Formu ---------- */
+/* ---------- Randevu Ekleme Formu Açma (DÜZELTİLDİ) ---------- */
 function yeniRandevuAc() {
   $('eid').value = '';$('fBaslik').textContent = 'Yeni randevu';
   $('m_tarih').value =$('tarih').value;
@@ -445,8 +445,26 @@ async function personelGirisleriniGoster() {
   sheet('Personel Giriş Geçmişi', liste);
 }
 
+async function musterileriYukle() {
+  const { data } = await sb.from('randevular').select('musteri_adi,telefon').order('id', { ascending: false });
+  if (data) {
+    const datalist = $('musteriler');
+    datalist.replaceChildren();
+    const eklendi = new Set();
+    data.forEach(m => {
+      if (m.musteri_adi && !eklendi.has(m.musteri_adi)) {
+        eklendi.add(m.musteri_adi);
+        const opt = document.createElement('option');
+        opt.value = m.musteri_adi;
+        datalist.appendChild(opt);
+      }
+    });
+  }
+}
+
 /* ---------- Tarih gezinme ---------- */
-function gunDegis(n) { const [y, m, d] = $('tarih').value.split('-').map(Number);$('tarih').value = yerel(new Date(y, m - 1, d + n)); yukle(); }$('geri').onclick = () => gunDegis(-1);$('ileri').onclick = () => gunDegis(1);$('bugun').onclick = () => {$('tarih').value = yerel(); yukle(); };$('tarih').onchange = yukle;
+function gunDegis(n) { const [y, m, d] = $('tarih').value.split('-').map(Number);$('tarih').value = yerel(new Date(y, m - 1, d + n)); yukle(); }$('geri').onclick = () => gunDegis(-1);
+$('ileri').onclick = () => gunDegis(1);$('bugun').onclick = () => { $('tarih').value = yerel(); yukle(); };$('tarih').onchange = yukle;
 $('filtre').onchange = ciz;
 $('iptalGoster').onchange = yukle;
 $('tarih').value = yerel();
