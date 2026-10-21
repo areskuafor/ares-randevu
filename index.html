@@ -93,7 +93,7 @@ h1{font-size:18px;color:var(--acc)}
 #chips .chip.on{background:rgba(216,179,106,.18);color:var(--acc)}
 #chips .chip.on::after{content:'✓'}
 .chip.on{background:var(--gold);color:#171109;border-color:#f1d99b}
-.fab{display:none;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;background:var(--gold);color:#171109;border:1px solid #f1d99b;font-size:30px;font-weight:700;align-items:center;justify-content:center;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer}
+.fab{display:flex;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;background:var(--gold);color:#171109;border:1px solid #f1d99b;font-size:30px;font-weight:700;align-items:center;justify-content:center;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer}
 .big{display:block;width:100%;text-align:center;text-decoration:none;background:var(--gold);color:#171109;border:1px solid #f1d99b;padding:12px;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;margin-top:9px}
 .big.alt{background:#211d16;color:var(--acc);border-color:#51432c}
 .big.red{background:rgba(166,31,38,.25);color:#ffb5b5;border-color:rgba(214,70,76,.55)}
@@ -110,8 +110,6 @@ header{padding:10px 12px}
 .badge{display:none}
 .ctl{padding:8px 10px}
 .ctl input,.ctl select,.f input,.f select,.sel{font-size:16px}
-#yeni{display:none}
-.fab{display:flex}
 .row{flex-wrap:wrap}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -147,7 +145,7 @@ header{padding:10px 12px}
       <button class="nav" id="ileri" aria-label="Sonraki gün">&gt;</button>
       <button class="today" id="bugun">Bugün</button>
     </div>
-    <button class="add" id="yeni">+ Yeni randevu</button>
+    <button class="add" id="yeni" type="button">+ Yeni randevu</button>
   </div>
   <div class="row">
     <select id="filtre" style="flex:1"><option value="">Tüm personeller</option></select>
@@ -172,7 +170,7 @@ header{padding:10px 12px}
     </select>
   </div>
   <div class="f"><label for="p_tel">Telefon</label><input id="p_tel" type="tel" placeholder="05xx xxx xx xx"></div>
-  <button class="big" id="btnPersonelKaydet">Personel ve Hesabını Oluştur</button>
+  <button class="big" id="btnPersonelKaydet" type="button">Personel ve Hesabını Oluştur</button>
 </div></div>
 
 <!-- Randevu formu -->
@@ -192,7 +190,7 @@ header{padding:10px 12px}
     <label class="chk" style="margin-top:20px"><input type="checkbox" id="m_odendi">Kapora ödendi</label>
   </div>
   <div class="f"><label for="m_not">Özel not</label><input id="m_not"></div>
-  <button class="big" id="kaydet">Randevuyu kaydet</button>
+  <button class="big" id="kaydet" type="button">Randevuyu kaydet</button>
 </div></div>
 
 <!-- İşlem penceresi ve arama sonuçları -->
@@ -201,7 +199,7 @@ header{padding:10px 12px}
   <div id="sIcerik"></div>
 </div></div>
 
-<button class="fab" id="fab" aria-label="Yeni randevu">+</button>
+<button class="fab" id="fab" aria-label="Yeni randevu" type="button">+</button>
 <div id="toast" role="status"></div>
 
 <script>
@@ -282,10 +280,14 @@ async function basla() {
 
   yoneticiButonlariniDuzenle();
 
+  // Filtre ve Form Personel Seçim Menülerini Doldur
   const f = $('filtre'), m =$('m_per');
   f.replaceChildren(new Option('Tüm personeller', ''));
   m.replaceChildren();
-  personel.forEach(p => { f.add(new Option(p.ad_soyad, p.ad_soyad)); m.add(new Option(p.ad_soyad, p.ad_soyad)); });
+  personel.forEach(p => { 
+    f.add(new Option(p.ad_soyad, p.ad_soyad)); 
+    m.add(new Option(p.ad_soyad, p.ad_soyad)); 
+  });
   
   await musterileriYukle();
   await yukle();
@@ -302,6 +304,7 @@ function yoneticiButonlariniDuzenle() {
   if (ben.rol !== 'yonetici') return;
 
   const btnEkle = el('button', 'btn-gold-sm', '+ Personel');
+  btnEkle.type = 'button';
   btnEkle.style.marginRight = '6px';
   btnEkle.onclick = () => $('ovPersonel').classList.add('on');
   alan.appendChild(btnEkle);
@@ -309,6 +312,7 @@ function yoneticiButonlariniDuzenle() {
   if (!$('btnGirisler')) {
     const btn = document.createElement('button');
     btn.id = 'btnGirisler';
+    btn.type = 'button';
     btn.className = 'btn-out';
     btn.textContent = 'Girişler';
     btn.style.marginRight = '6px';
@@ -356,7 +360,7 @@ $('btnPersonelKaydet').onclick = async () => {
   basla();
 };
 
-/* ---------- Randevu Ekleme Formu Açma (DÜZELTİLDİ) ---------- */
+/* ---------- Randevu Ekleme Formu Açma ---------- */
 function yeniRandevuAc() {
   $('eid').value = '';$('fBaslik').textContent = 'Yeni randevu';
   $('m_tarih').value =$('tarih').value;
@@ -494,7 +498,6 @@ function ciz() {
   const seciliPer = $('filtre').value;
   const isMobile = window.innerWidth <= 640;
 
-  // MOBİLDE TEK EKRAN LİSTE GÖRÜNÜMÜ
   if (isMobile) {
     const listWrap = el('div', 'liste');
     const filtrelenmisRands = seciliPer ? rands.filter(r => r.personel_adi === seciliPer) : rands;
@@ -522,7 +525,6 @@ function ciz() {
     return;
   }
 
-  // MASAÜSTÜNDE SÜTUNLU ÇİZELGE GÖRÜNÜMÜ
   const gosterilecekler = seciliPer ? personel.filter(p => p.ad_soyad === seciliPer) : personel;
 
   const tcol = el('div', 'tcol');
@@ -574,6 +576,7 @@ function randevuDetay(r) {
 
   if (yetkili(r) && r.durum !== 'İptal') {
     const btnIptal = el('button', 'big red', 'Randevuyu İptal Et');
+    btnIptal.type = 'button';
     btnIptal.onclick = async () => {
       if (!confirm('Bu randevuyu iptal etmek istediğinize emin misiniz?')) return;
       const { error } = await sb.from('randevular').update({ durum: 'İptal' }).eq('id', r.id);
