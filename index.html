@@ -426,7 +426,6 @@ $('kaydet').onclick = async () => {
     telefon: tel,
     personel_id: personelId,
     personel_adi: perAd,
-    islem: hiz,
     kapora: kapora,
     kapora_odendi: odendi,
     notlar: notlar
@@ -523,7 +522,7 @@ function ciz() {
           <div class="ls">${saatStr}</div>
           <div class="lg">
             <div class="lt">${r.musteri_adi || 'Müşteri'}</div>
-            <div class="lh">✂️ ${r.islem || 'Belirtilmedi'} &nbsp;•&nbsp; 📞 ${r.telefon || 'Yok'}</div>
+            <div class="lh">📞 ${r.telefon || 'Yok'}</div>
             <div class="lp">👤 ${r.personel_adi || 'Atanmadı'}</div>
           </div>
         `;
@@ -556,13 +555,13 @@ function ciz() {
       if (basDk < 0) return;
 
       const top = (basDk / 60) * H;
-      const height = ((r.islem_suresi_dk || 60) / 60) * H;
+      const height = 70;
 
       const ev = el('div', 'ev' + (r.durum === 'İptal' ? ' iptal' : '') + (bitti(r) ? ' bitti' : ''));
       ev.style.top = top + 'px';
       ev.style.height = height + 'px';
       ev.style.borderLeftColor = RENK[idx % RENK.length];
-      ev.innerHTML = `<div class="t">${r.musteri_adi || 'Müşteri'}</div><div class="s">${saatStr} - ${r.islem || ''}</div>`;
+      ev.innerHTML = `<div class="t">${r.musteri_adi || 'Müşteri'}</div><div class="s">${saatStr}</div>`;
       ev.onclick = (e) => { e.stopPropagation(); randevuDetay(r); };
       pbody.appendChild(ev);
     });
@@ -578,7 +577,6 @@ function randevuDetay(r) {
   const icerik = [
     el('div', 'info', `👤 Müşteri: ${r.musteri_adi}`),
     el('div', 'info', `📞 Telefon: ${r.telefon || 'Belirtilmedi'}`),
-    el('div', 'info', `✂️ İşlem: ${r.islem || 'Belirtilmedi'}`),
     el('div', 'info', `🕒 Saat: ${r.tarih_saat.slice(11, 16)}`),
     el('div', 'info', `👤 Personel: ${r.personel_adi || 'Atanmadı'}`),
     el('div', 'info', `💰 Kapora: ${r.kapora || 0} ₺ ${r.kapora_odendi ? '(Ödendi)' : '(Ödenmedi)'}`),
