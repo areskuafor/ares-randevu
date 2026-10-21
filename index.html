@@ -189,7 +189,7 @@ header{padding:10px 12px}
     <div class="f"><label for="m_kap">Kapora (₺)</label><input type="number" id="m_kap" min="0" value="0" inputmode="decimal"></div>
     <label class="chk" style="margin-top:20px"><input type="checkbox" id="m_odendi">Kapora ödendi</label>
   </div>
-  <div class="f"><label for="m_not">Special Not</label><input id="m_not"></div>
+  <div class="f"><label for="m_not">Özel not</label><input id="m_not"></div>
   <button class="big" id="kaydet" type="button">Randevuyu kaydet</button>
 </div></div>
 
@@ -372,9 +372,8 @@ function yeniRandevuAc(r = null) {
   if (hiz) $('hizBtn').classList.remove('bos-sec'); else $('hizBtn').classList.add('bos-sec');$('chips').classList.add('hidden');
   $('m_diger').classList.add('hidden');$('m_diger').value = '';
   
-  if (r && r.personel_id) {
-    const pObj = personel.find(p => String(p.id) === String(r.personel_id));
-    if (pObj) $('m_per').value = pObj.ad_soyad;
+  if (r && r.personel_adi) {
+    $('m_per').value = r.personel_adi;
   }
   
   $('m_saat').value = r ? r.tarih_saat.slice(11, 16) : '';
@@ -423,6 +422,7 @@ $('kaydet').onclick = async () => {
     musteri_adi: adi,
     telefon: tel,
     personel_id: personelId,
+    personel_adi: perAd,
     kapora: kapora,
     kapora_odendi: odendi,
     notlar: notlar
@@ -507,26 +507,20 @@ function ciz() {
 
   if (isMobile) {
     const listWrap = el('div', 'liste');
-    const filtrelenmisRands = seciliPer ? rands.filter(r => {
-      const pObj = personel.find(p => String(p.id) === String(r.personel_id));
-      return pObj && pObj.ad_soyad === seciliPer;
-    }) : rands;
+    const filtrelenmisRands = seciliPer ? rands.filter(r => r.personel_adi === seciliPer) : rands;
 
     if (!filtrelenmisRands.length) {
       listWrap.appendChild(el('div', 'bos', 'Bu güne ait randevu bulunmuyor.'));
     } else {
       filtrelenmisRands.forEach(r => {
         const saatStr = r.tarih_saat.slice(11, 16);
-        const pObj = personel.find(p => String(p.id) === String(r.personel_id));
-        const pAdi = pObj ? pObj.ad_soyad : 'Atanmadı';
-        
         const li = el('div', 'li' + (r.durum === 'İptal' ? ' iptal' : '') + (bitti(r) ? ' bitti' : ''));
         li.innerHTML = `
           <div class="ls">${saatStr}</div>
           <div class="lg">
             <div class="lt">${r.musteri_adi || 'Müşteri'}</div>
             <div class="lh">📞 ${r.telefon || 'Yok'}</div>
-            <div class="lp">👤 ${pAdi}</div>
+            <div class="lp">👤 ${r.personel_adi || 'Atanmadı'}</div>
           </div>
         `;
         li.onclick = () => randevuDetay(r);
@@ -551,7 +545,7 @@ function ciz() {
     const pbody = el('div', 'pbody');
     pbody.style.height = ((S1 - S0 + 1) * H) + 'px';
 
-    const perRands = rands.filter(r => String(r.personel_id) === String(p.id));
+    const perRands = rands.filter(r => String(r.personel_id) === String(p.id) || r.personel_adi === p.ad_soyad);
     perRands.forEach(r => {
       const saatStr = r.tarih_saat.slice(11, 16);
       const basDk = dk(saatStr) - (S0 * 60);
@@ -577,14 +571,11 @@ function ciz() {
 }
 
 function randevuDetay(r) {
-  const pObj = personel.find(p => String(p.id) === String(r.personel_id));
-  const pAdi = pObj ? pObj.ad_soyad : 'Atanmadı';
-
   const icerik = [
     el('div', 'info', `👤 Müşteri: ${r.musteri_adi}`),
     el('div', 'info', `📞 Telefon: ${r.telefon || 'Belirtilmedi'}`),
     el('div', 'info', `🕒 Saat: ${r.tarih_saat.slice(11, 16)}`),
-    el('div', 'info', `👤 Personel: ${pAdi}`),
+    el('div', 'info', `👤 Personel: ${r.personel_adi || 'Atanmadı'}`),
     el('div', 'info', `💰 Kapora: ${r.kapora || 0} ₺ ${r.kapora_odendi ? '(Ödendi)' : '(Ödenmedi)'}`),
     el('div', 'info', `📝 Not: ${r.notlar || 'Yok'}`)
   ];
