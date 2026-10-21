@@ -166,7 +166,9 @@ header{padding:10px 12px}
 <!-- Yeni Personel Ekleme Penceresi -->
 <div class="ov" id="ovPersonel"><div class="card">
   <div class="mh"><h3>Yeni Personel Ekle</h3><button class="x" data-kapat aria-label="Kapat">&times;</button></div>
-  <div class="f"><label for="p_ad">Ad Soyad</label><input id="p_ad" placeholder="Örn: Ayşe Yılmaz"></div>
+  <div class="f"><label for="p_ad">Kullanıcı Adı (Örn: ayse)</label><input id="p_ad" placeholder="küçük harfle yazın"></div>
+  <div class="f"><label for="p_isim">Ad Soyad (Ekranda görünecek)</label><input id="p_isim" placeholder="Örn: Ayşe Yılmaz"></div>
+  <div class="f"><label for="p_sifre">Giriş Şifresi</label><input id="p_sifre" type="password" placeholder="En az 6 karakter"></div>
   <div class="f"><label for="p_rol">Rol</label>
     <select id="p_rol">
       <option value="personel">Personel</option>
@@ -174,7 +176,7 @@ header{padding:10px 12px}
     </select>
   </div>
   <div class="f"><label for="p_tel">Telefon</label><input id="p_tel" type="tel" placeholder="05xx xxx xx xx"></div>
-  <button class="big" id="btnPersonelKaydet">Personeli Kaydet</button>
+  <button class="big" id="btnPersonelKaydet">Personel ve Hesabını Oluştur</button>
 </div></div>
 
 <!-- Randevu formu -->
@@ -261,7 +263,6 @@ async function basla() {
   
   personel = data || [];
   
-  // UUID esnek ve güvenli eşleştirme
   ben = personel.find(p => p.auth_id && String(p.auth_id).trim().toLowerCase() === String(session.user.id).trim().toLowerCase());
 
   if (!ben) {
@@ -270,7 +271,6 @@ async function basla() {
     return toast('Hesabınız personel listesine bağlı değil');
   }
 
-  // Personel giriş kaydı oluşturma
   if (!sessionStorage.getItem('giris_yapildi_' + ben.id)) {
     try {
       await sb.from('personel_giris_kayitlari').insert([{
@@ -307,13 +307,11 @@ function yoneticiButonlariniDuzenle() {
 
   if (ben.rol !== 'yonetici') return;
 
-  // Personel Ekle Butonu
   const btnEkle = el('button', 'btn-gold-sm', '+ Personel');
   btnEkle.style.marginRight = '6px';
   btnEkle.onclick = () => $('ovPersonel').classList.add('on');
   alan.appendChild(btnEkle);
 
-  // Girişler Butonu
   if (!$('btnGirisler')) {
     const btn = document.createElement('button');
     btn.id = 'btnGirisler';
@@ -325,28 +323,125 @@ function yoneticiButonlariniDuzenle() {
   }
 }
 
-/* ---------- Yeni Personel Kaydetme İşlevi ---------- */
+/* ---------- Yeni Personel ve Şifre Kaydetme İşlevi ---------- */
 $('btnPersonelKaydet').onclick = async () => {
-  const ad = $('p_ad').value.trim();
+  const username = $('p_ad').value.trim().toLowerCase();
+  const isim = $('p_isim').value.trim();
+  const sifre = $('p_sifre').value;
   const rol = $('p_rol').value;
   const tel = $('p_tel').value.trim();
 
-  if (!ad) return toast('Lütfen personel adını girin');
+  if (!username || !isim || !sifre) return toast('Lütfen kullanıcı adı, ad soyad ve şifre girin');
 
-  const { error } = await sb.from('personeller').insert([{
-    ad_soyad: ad,
+  const email = username + '@ares.app';
+
+  // 1. Supabase Auth tarafında kullanıcı oluşturma (signUp)
+  const { data: authData, error: authError } = await sb.auth.signUp({
+    email: email,
+    password: sifre
+  });
+
+  if (authError) return toast('Auth kullanıcı oluşturulamadı: ' + authError.message);
+  
+  const newUserId = authData.user ? authData.user.id : null;
+  if (!newUserId) return toast('Kullanıcı ID alınamadı');
+
+  // 2. personeller tablosuna auth_id eşleşmesiyle kayıt ekleme
+  const { error: dbError } = await sb.from('personeller').insert([{
+    ad_soyad: isim,
     rol: rol,
-    telefon: tel
+    telefon: tel,
+    auth_id: newUserId
   }]);
 
-  if (error) return toast('Personel eklenemedi: ' + error.message);
+  if (dbError) return toast('Personel tablosuna yazılamadı: ' + dbError.message);
 
-  toast('Personel başarıyla eklendi!');
+  toast('Personel ve giriş hesabı başarıyla oluşturuldu!');
   $('p_ad').value = '';
+  $('p_isim').value = '';$('p_sifre').value = '';
   $('p_tel').value = '';$('ovPersonel').classList.remove('on');
   
-  // Listeyi yenile
   basla();
+};
+
+/* ---------- Randevu Ekleme Butonları ve Form Tetikleyicileri ---------- */
+function yeniRandevuAc() {
+  $('eid').value = '';$('fBaslik').textContent = 'Yeni randevu';
+  $('m_tarih').value =$('tarih').value;
+  $('m_adi').value = '';
+  $('m_tel').value = '';$('hizTxt').textContent = 'Yapılacak işlemi seçin';
+  $('hizBtn').classList.add('bos-sec');
+  $('chips').classList.add('hidden');$('m_diger').classList.add('hidden');
+  $('m_diger').value = '';$('m_saat').value = '';
+  $('m_kap').value = '0';$('m_odendi').checked = false;
+  $('m_not').value = '';$('ovForm').classList.add('on');
+}
+
+$('yeni').onclick = yeniRandevuAc;
+$('fab').onclick = yeniRandevuAc;
+
+// Hizmet Seçim Menüsü Aç/Kapat
+$('hizBtn').onclick = () => {
+  const chips = $('chips');
+  chips.classList.toggle('hidden');
+  if (!chips.hasChildNodes()) {
+    ['Saç Kesimi', 'Fön', 'Renklendirme (Boya)', 'Ombre / Balyaj', 'Keratin Bakım', 'Mikro Kaynak', 'Gelin Saçı', 'Manikür / Pedikür'].forEach(h => {
+      const c = el('div', 'chip', h);
+      c.onclick = () => {
+        $('hizTxt').textContent = h;
+        $('hizBtn').classList.remove('bos-sec');
+        chips.classList.add('hidden');
+        if (h === 'Diğer') $('m_diger').classList.remove('hidden'); else$('m_diger').classList.add('hidden');
+      };
+      chips.appendChild(c);
+    });
+  }
+};
+
+// Randevu Kaydet Butonu
+$('kaydet').onclick = async () => {
+  const tarih = $('m_tarih').value;
+  const adi = $('m_adi').value.trim();
+  const tel = $('m_tel').value.trim();
+  const perAd = $('m_per').value;
+  const saat = $('m_saat').value;
+  const hiz = $('hizTxt').textContent === 'Yapılacak işlemi seçin' ? '' : $('hizTxt').textContent;
+  const kapora = +$('m_kap').value || 0;
+  const odendi = $('m_odendi').checked;
+  const notlar = $('m_not').value.trim();
+
+  if (!tarih || !adi || !perAd || !saat) return toast('Lütfen tarih, müşteri adı, personel ve saat seçin');
+
+  const secilenPersonel = personel.find(p => p.ad_soyad === perAd);
+  const personelId = secilenPersonel ? secilenPersonel.id : null;
+
+  const randData = {
+    tarih_saat: `${tarih}T${saat}:00`,
+    musteri_adi: adi,
+    telefon: tel,
+    personel_id: personelId,
+    personel_adi: perAd,
+    islem: hiz,
+    kapora: kapora,
+    kapora_odendi: odendi,
+    notlar: notlar
+  };
+
+  const eid = $('eid').value;
+  let error;
+  if (eid) {
+    const res = await sb.from('randevular').update(randData).eq('id', eid);
+    error = res.error;
+  } else {
+    const res = await sb.from('randevular').insert([randData]);
+    error = res.error;
+  }
+
+  if (error) return toast('Randevu kaydedilemedi: ' + error.message);
+
+  toast('Randevu başarıyla kaydedildi!');
+  $('ovForm').classList.remove('on');
+  await yukle();
 };
 
 async function personelGirisleriniGoster() {
