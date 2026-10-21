@@ -452,10 +452,18 @@ $('kaydet').onclick = async () => {
   if (kayitDevamEdiyor) return;
 
   const eid = $('eid').value, tarih = $('m_tarih').value;
+  const secilenPersonelAdi = $('m_per').value;
+  const bulunanPer = personel.find(p => p.ad_soyad === secilenPersonelAdi);
+
   const v = {
-    musteri_adi: $('m_adi').value.trim(), telefon: $('m_tel').value.trim(), hizmet: hizmetAl(),
-    islem_yapan_personel: $('m_per').value,
-    kapora: +$('m_kap').value || 0, kapora_odendi: $('m_odendi').checked, notlar: $('m_not').value.trim()
+    musteri_adi: $('m_adi').value.trim(), 
+    telefon: $('m_tel').value.trim(), 
+    hizmet: hizmetAl(),
+    islem_yapan_personel: secilenPersonelAdi,
+    personel_id: bulunanPer ? bulunanPer.id : ben.id,
+    kapora: +$('m_kap').value || 0, 
+    kapora_odendi: $('m_odendi').checked, 
+    notlar: $('m_not').value.trim()
   };
   const saat = $('m_saat').value;
   if (!v.musteri_adi || !v.hizmet || !saat || !tarih) {
@@ -474,7 +482,7 @@ $('kaydet').onclick = async () => {
       ({ error } = await sb.from('randevular').update(v).eq('id', eid));
     } else {
       ({ error } = await sb.from('randevular').insert([{
-        ...v, islem_suresi_dk: 60, personel_id: ben.id, durum: 'Aktif'
+        ...v, islem_suresi_dk: 60, durum: 'Aktif'
       }]));
     }
     if (error) {
