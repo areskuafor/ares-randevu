@@ -211,7 +211,7 @@ const yetkili = r => ben && (ben.rol === 'yonetici' || String(r.personel_id) ===
 /* ---------- Giriş / çıkış (Supabase Auth) ---------- */
 $('lform').onsubmit = async e => {
   e.preventDefault();
-  const u = $('u').value.trim().toLowerCase(), p = $('p').value;
+  const u = $('u').value.trim().toLowerCase(), p =$('p').value;
   if (!u || !p) return toast('Kullanıcı adı ve şifre girin');
   const { error } = await sb.auth.signInWithPassword({ email: u + '@ares.app', password: p });
   if (error) return toast('Hatalı kullanıcı adı veya şifre');
@@ -233,9 +233,23 @@ async function basla() {
   personel = data || [];
   ben = personel.find(p => p.auth_id === session.user.id);
   if (!ben) { await sb.auth.signOut(); return toast('Hesabınız personel listesine bağlı değil'); }
-  $('login').classList.add('hidden');
-  $('kim').textContent = ben.ad_soyad;
-  const f = $('filtre'), m = $('m_per');
+
+  // Personel giriş yaptıysa veritabanına log düşer (Her tarayıcı oturumu için 1 kez)
+  if (!sessionStorage.getItem('giris_yapildi_' + ben.id)) {
+    await sb.from('personel_giris_kayitlari').insert([{
+      personel_id: ben.id,
+      kullanici_adi: ben.ad_soyad,
+      olay: 'giris'
+    }]);
+    sessionStorage.setItem('giris_yapildi_' + ben.id, '1');
+  }
+
+  $('login').classList.add('hidden');$('kim').textContent = ben.ad_soyad;
+
+  // Yönetici ise header tarafına Girişler butonunu ekler
+  yoneticiButonlariniDuzenle();
+
+  const f = $('filtre'), m =$('m_per');
   f.replaceChildren(new Option('Tüm personeller', ''));
   m.replaceChildren();
   personel.forEach(p => { f.add(new Option(p.ad_soyad, p.ad_soyad)); m.add(new Option(p.ad_soyad, p.ad_soyad)); });
@@ -244,20 +258,50 @@ async function basla() {
   if (!kanal) kanal = sb.channel('canli').on('postgres_changes', { event: '*', schema: 'public', table: 'randevular' }, () => yukle()).subscribe();
 }
 
+function yoneticiButonlariniDuzenle() {
+  if (ben.rol !== 'yonetici') return;
+  if (!$('btnGirisler')) {
+    const btn = document.createElement('button');
+    btn.id = 'btnGirisler';
+    btn.className = 'btn-out';
+    btn.textContent = 'Girişler';
+    btn.style.marginRight = '6px';
+    btn.onclick = personelGirisleriniGoster;
+    $('cikis').before(btn);
+  }
+}
+
+async function personelGirisleriniGoster() {
+  if (ben.rol !== 'yonetici') return toast('Bu alanı sadece yöneticiler görebilir');
+  
+  const { data, error } = await sb.from('personel_giris_kayitlari')
+    .select('*')
+    .order('zaman', { ascending: false })
+    .limit(50);
+    
+  if (error) return toast('Kayıtlar yüklenemedi: ' + error.message);
+  
+  const liste = (data || []).map(k => {
+    const tarihSaat = new Date(k.zaman).toLocaleString('tr-TR');
+    return el('div', 'info', `👤 ${k.kullanici_adi} — 🕒 ${tarihSaat}`);
+  });
+  
+  if (!liste.length) liste.push(el('div', 'info', 'Henüz giriş kaydı bulunmuyor'));
+  
+  sheet('Personel Giriş Geçmişi', liste);
+}
+
 /* ---------- Tarih gezinme ---------- */
-function gunDegis(n) { const [y, m, d] = $('tarih').value.split('-').map(Number); $('tarih').value = yerel(new Date(y, m - 1, d + n)); ilkKaydir = true; yukle(); }
-$('geri').onclick = () => gunDegis(-1);
-$('ileri').onclick = () => gunDegis(1);
-$('bugun').onclick = () => { $('tarih').value = yerel(); ilkKaydir = true; yukle(); };
-$('tarih').onchange = () => { ilkKaydir = true; yukle(); };
-$('filtre').onchange = ciz;
+function gunDegis(n) { const [y, m, d] = $('tarih').value.split('-').map(Number);$('tarih').value = yerel(new Date(y, m - 1, d + n)); ilkKaydir = true; yukle(); }
+$('geri').onclick = () => gunDegis(-1);$('ileri').onclick = () => gunDegis(1);
+$('bugun').onclick = () => {$('tarih').value = yerel(); ilkKaydir = true; yukle(); };
+$('tarih').onchange = () => { ilkKaydir = true; yukle(); };$('filtre').onchange = ciz;
 $('iptalGoster').onchange = yukle;
 $('tarih').value = yerel();
 
 /* ---------- Veri ---------- */
 function gunYaz() {
-  const [y, m, d] = $('tarih').value.split('-').map(Number), t = new Date(y, m - 1, d);
-  $('gunTarih').textContent = t.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const [y, m, d] = $('tarih').value.split('-').map(Number), t = new Date(y, m - 1, d);$('gunTarih').textContent = t.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
   $('gunAdi').textContent = t.toLocaleDateString('tr-TR', { weekday: 'long' }) + ($('tarih').value === yerel() ? ' • Bugün' : '');
 }
 
@@ -274,275 +318,4 @@ async function yukle() {
 }
 
 async function musterileriYukle() {
-  const { data } = await sb.from('randevular').select('musteri_adi,telefon').order('id', { ascending: false }).limit(500);
-  musteriMap = {};
-  (data || []).forEach(r => { if (r.musteri_adi && !(r.musteri_adi in musteriMap)) musteriMap[r.musteri_adi] = r.telefon || ''; });
-  const dl = $('musteriler'); dl.replaceChildren();
-  Object.keys(musteriMap).forEach(a => { const o = document.createElement('option'); o.value = a; dl.appendChild(o); });
-}
-$('m_adi').oninput = () => { const t = musteriMap[$('m_adi').value]; if (t && !$('m_tel').value) $('m_tel').value = t; };
-
-/* ---------- Çizelge ---------- */
-const mobil = () => matchMedia('(max-width:640px)').matches;
-matchMedia('(max-width:640px)').addEventListener('change', () => { if (ben) ciz(); });
-
-function cizListe(f) {
-  const B = $('board'); B.replaceChildren();
-  const l = rands.filter(r => !f || r.islem_yapan_personel === f);
-  const w = el('div', 'liste');
-  if (!l.length) w.appendChild(el('div', 'bos', 'Bu gün için randevu yok.\nSağ alttaki + tuşuyla ekleyebilirsin.'));
-  l.forEach(r => {
-    const ci = Math.max(0, personel.findIndex(p => p.ad_soyad === r.islem_yapan_personel)), renk = RENK[ci % RENK.length];
-    const c = el('div', 'li' + (r.durum === 'İptal' ? ' iptal' : '') + (bitti(r) ? ' bitti' : '')); c.style.borderLeftColor = renk;
-    const g = el('div', 'lg'), p = el('div', 'lp', r.islem_yapan_personel || ''); p.style.color = renk;
-    g.append(el('div', 'lt', r.musteri_adi), el('div', 'lh', r.hizmet + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')), p, ...(bitti(r) ? [el('div', 'lb', '✓ Tamamlandı')] : []));
-    c.append(el('div', 'ls', r.tarih_saat.slice(11, 16)), g);
-    c.onclick = () => islemAc(r);
-    w.appendChild(c);
-  });
-  B.appendChild(w);
-}
-
-function ciz() {
-  const f = $('filtre').value, bugun = $('tarih').value === yerel();
-  $('ozet').textContent = rands.filter(r => r.durum !== 'İptal' && (!f || r.islem_yapan_personel === f)).length + ' randevu';
-  if (mobil()) return cizListe(f);
-  const adlar = f ? [f] : [...new Set([...personel.map(p => p.ad_soyad), ...rands.map(r => r.islem_yapan_personel).filter(Boolean)])];
-  const B = $('board'); B.replaceChildren();
-  const tc = el('div', 'tcol'); tc.appendChild(el('div', 'phead'));
-  for (let h = S0; h <= S1; h++) tc.appendChild(el('div', 'tl', pad(h) + ':00'));
-  B.appendChild(tc);
-  const toplam = $('tarih').value;
-  adlar.forEach(ad => {
-    const ci = Math.max(0, personel.findIndex(p => p.ad_soyad === ad)), renk = RENK[ci % RENK.length];
-    const c = el('div', 'pcol'), hd = el('div', 'phead', ad); hd.style.color = renk; c.appendChild(hd);
-    const b = el('div', 'pbody'); b.style.height = (S1 - S0 + 1) * H + 'px';
-    b.onclick = e => {
-      const m = Math.floor(((e.offsetY / H) * 60) / 30) * 30;
-      formAc(null, pad(S0 + Math.floor(m / 60)) + ':' + pad(m % 60), ad);
-    };
-    const liste = rands.filter(r => r.islem_yapan_personel === ad), seritler = [], yer = new Map();
-    liste.forEach(r => {
-      const bas = dk(r.tarih_saat.slice(11, 16)), bit = bas + (r.islem_suresi_dk || 60);
-      let i = seritler.findIndex(x => x <= bas); if (i < 0) i = seritler.length;
-      seritler[i] = bit; yer.set(r, i);
-    });
-    liste.forEach(r => {
-      const s = r.tarih_saat.slice(11, 16), top = (dk(s) - S0 * 60) / 60 * H;
-      if (top < 0) return;
-      const d = r.islem_suresi_dk || 60, iptal = r.durum === 'İptal';
-      const e = el('div', 'ev' + (iptal ? ' iptal' : '') + (bitti(r) ? ' bitti' : ''));
-      const w = 100 / seritler.length;
-      e.style.cssText = `top:${top}px;height:${Math.max(d / 60 * H - 2, 30)}px;border-left-color:${renk};left:calc(${yer.get(r) * w}% + 3px);right:auto;width:calc(${w}% - 6px)`;
-      e.append(el('div', 't', (bitti(r) ? '✓ ' : '') + s + ' ' + r.musteri_adi),
-               el('div', 's', r.hizmet + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')));
-      e.onclick = ev => { ev.stopPropagation(); islemAc(r); };
-      b.appendChild(e);
-    });
-    if (bugun) {
-      const n = new Date(), top = (n.getHours() * 60 + n.getMinutes() - S0 * 60) / 60 * H;
-      if (top >= 0 && top <= (S1 - S0 + 1) * H) { const l = el('div', 'now'); l.style.top = top + 'px'; b.appendChild(l); }
-    }
-    c.appendChild(b); B.appendChild(c);
-  });
-  $('ozet').textContent = rands.filter(r => r.durum !== 'İptal' && (!f || r.islem_yapan_personel === f)).length + ' randevu';
-  if (ilkKaydir) {
-    ilkKaydir = false;
-    const n = new Date(), hedef = bugun ? (n.getHours() * 60 + n.getMinutes() - S0 * 60) / 60 * H - 120 : 0;
-    B.scrollTop = Math.max(0, hedef);
-  }
-}
-
-/* ---------- Pencereler ---------- */
-const ac = id => $(id).classList.add('on');
-const kapat = () => document.querySelectorAll('.ov').forEach(o => o.classList.remove('on'));
-document.querySelectorAll('[data-kapat]').forEach(b => b.onclick = kapat);
-document.querySelectorAll('.ov').forEach(o => o.onclick = e => { if (e.target === o) kapat(); });
-$('yeni').onclick = () => formAc();
-
-// Hazır işlem seçenekleri (birden fazla seçilebilir, DİĞER seçilince elle yazma kutusu açılır)
-const HIZMETLER = ['DİP BOYA','KESİM','OMBRE','GELİN SAÇI','NİŞAN SAÇI','NİKAH SAÇI','MAKYAJ','MANİKÜR','PEDİKÜR','FÖN','RÖFLE','KAŞ','MAŞA','KERATİN','KOMPLE BOYA','AÇMA','BOYAMA','KAYNAK','DİĞER'];
-HIZMETLER.forEach(a => {
-  const c = el('button', 'chip', a); c.type = 'button'; c.dataset.a = a;
-  c.onclick = () => {
-    c.classList.toggle('on');
-    if (a === 'DİĞER') { const d = $('m_diger'); d.classList.toggle('hidden', !c.classList.contains('on')); if (c.classList.contains('on')) d.focus(); }
-    hizmetOzet();
-  };
-  $('chips').appendChild(c);
-});
-$('hizBtn').onclick = () => $('chips').classList.toggle('hidden');
-$('m_diger').oninput = () => hizmetOzet();
-function hizmetOzet() {
-  const t = hizmetAl();
-  $('hizTxt').textContent = t || 'Yapılacak işlemi seçin';
-  $('hizBtn').classList.toggle('bos-sec', !t);
-}
-const chipler = () => [...document.querySelectorAll('#chips .chip')];
-function hizmetSec(str) {
-  const parcalar = (str || '').split(' + ').map(x => x.trim()).filter(Boolean), diger = [];
-  chipler().forEach(c => c.classList.remove('on'));
-  parcalar.forEach(p => { const c = chipler().find(x => x.dataset.a === p && p !== 'DİĞER'); if (c) c.classList.add('on'); else diger.push(p); });
-  chipler().find(x => x.dataset.a === 'DİĞER').classList.toggle('on', diger.length > 0);
-  $('m_diger').classList.toggle('hidden', !diger.length);
-  $('m_diger').value = diger.join(' + ');
-  hizmetOzet();
-}
-function hizmetAl() {
-  const sec = chipler().filter(c => c.classList.contains('on') && c.dataset.a !== 'DİĞER').map(c => c.dataset.a);
-  const dc = chipler().find(x => x.dataset.a === 'DİĞER'), d = $('m_diger').value.trim().toLocaleUpperCase('tr-TR');
-  if (dc.classList.contains('on') && d) sec.push(d);
-  return sec.join(' + ');
-}
-$('fab').onclick = () => formAc();
-
-function formAc(r, saat, per) {
-  $('eid').value = r ? r.id : '';
-  $('fBaslik').textContent = r ? 'Randevuyu düzenle' : 'Yeni randevu';
-  $('kaydet').textContent = r ? 'Değişiklikleri kaydet' : 'Randevuyu kaydet';
-  $('m_adi').value = r ? r.musteri_adi || '' : '';
-  $('m_tel').value = r ? r.telefon || '' : '';
-  hizmetSec(r ? r.hizmet : '');
-  $('chips').classList.add('hidden');
-  $('m_per').value = r ? r.islem_yapan_personel : (per || $('filtre').value || ben.ad_soyad);
-  $('m_tarih').value = r ? r.tarih_saat.slice(0, 10) : $('tarih').value;
-  $('m_saat').value = r ? r.tarih_saat.slice(11, 16) : (saat || '10:00');
-  $('m_kap').value = r ? r.kapora || 0 : 0;
-  $('m_odendi').checked = r ? !!r.kapora_odendi : false;
-  $('m_not').value = r ? r.notlar || '' : '';
-  kapat(); ac('ovForm');
-}
-
-function sheet(baslik, nodes) { $('sBaslik').textContent = baslik; $('sIcerik').replaceChildren(...nodes); kapat(); ac('ovSheet'); }
-function btn(txt, cls, fn, href) {
-  const b = el(href ? 'a' : 'button', 'big ' + (cls || ''), txt);
-  if (href) b.href = href; else b.onclick = fn;
-  return b;
-}
-const wa = t => { let n = t.replace(/\D/g, ''); if (n.startsWith('0')) n = '9' + n; else if (!n.startsWith('90')) n = '90' + n; return n; };
-
-function islemAc(r) {
-  const saat = r.tarih_saat.slice(11, 16), tarih = trTarih(r.tarih_saat.slice(0, 10));
-  const n = [el('div', 'info', `${tarih} ${saat} • ${r.islem_yapan_personel || ''}${bitti(r) ? ' • Tamamlandı' : ''}`),
-             el('div', 'info', `İşlem: ${r.hizmet}${r.telefon ? ' • ' + r.telefon : ''}${r.notlar ? ' • Not: ' + r.notlar : ''}`)];
-  if (r.durum === 'İptal') {
-    n.push(el('div', 'info', 'İptal nedeni: ' + (r.iptal_nedeni || 'belirtilmedi')));
-    if (yetkili(r)) n.push(btn('İptali geri al', '', () => durumDegis(r, 'Aktif', null)));
-  } else {
-    if (yetkili(r)) n.push(btn('Düzenle', '', () => formAc(r)));
-    if (r.telefon) {
-      n.push(btn('Müşteriyi ara', 'alt', null, 'tel:' + r.telefon));
-      n.push(btn('WhatsApp mesajı', 'alt', null, `https://wa.me/${wa(r.telefon)}`));
-      const msg = `Merhaba ${r.musteri_adi}, ${tarih} saat ${saat} için Ares Kuaför randevunuzu hatırlatmak isteriz. Görüşmek üzere.`;
-      n.push(btn('Hatırlatma gönder (WhatsApp)', 'alt', null, `https://wa.me/${wa(r.telefon)}?text=${encodeURIComponent(msg)}`));
-    }
-    if (yetkili(r)) {
-      const nd = el('input'); nd.placeholder = 'İptal nedeni (isteğe bağlı)'; nd.style.cssText = 'width:100%;margin-top:12px;padding:11px;border:1px solid #484035;background:#100f0d;color:#f7f3ec;border-radius:9px';
-      n.push(nd, btn('Randevuyu iptal et', 'red', () => durumDegis(r, 'İptal', nd.value.trim())));
-    }
-  }
-  sheet(r.musteri_adi, n);
-}
-
-async function durumDegis(r, durum, neden) {
-  const { error } = await sb.from('randevular').update({ durum, iptal_nedeni: neden }).eq('id', r.id);
-  if (error) return toast('İşlem başarısız: ' + error.message);
-  if (durum === 'İptal') bildir(r, 'iptal', neden);
-  kapat(); toast(durum === 'İptal' ? 'Randevu iptal edildi' : 'Randevu geri alındı'); yukle();
-}
-
-/* ---------- Kaydet: aynı anda çift tıklamayı engelle ---------- */
-let kayitDevamEdiyor = false;
-
-$('kaydet').onclick = async () => {
-  // İlk istek bitmeden gelen ikinci tıklamayı yok say.
-  if (kayitDevamEdiyor) return;
-
-  const eid = $('eid').value, tarih = $('m_tarih').value;
-  const v = {
-    musteri_adi: $('m_adi').value.trim(), telefon: $('m_tel').value.trim(), hizmet: hizmetAl(),
-    islem_yapan_personel: $('m_per').value,
-    kapora: +$('m_kap').value || 0, kapora_odendi: $('m_odendi').checked, notlar: $('m_not').value.trim()
-  };
-  const saat = $('m_saat').value;
-  if (!v.musteri_adi || !v.hizmet || !saat || !tarih) {
-    return toast('Müşteri adı, işlem, tarih ve saat zorunludur');
-  }
-  v.tarih_saat = `${tarih}T${saat}:00`;
-
-  const buton = $('kaydet');
-  const eskiYazi = buton.textContent;
-  kayitDevamEdiyor = true;
-  buton.disabled = true;
-  buton.textContent = 'Kaydediliyor...';
-
-  try {
-    let error;
-    if (eid) {
-      ({ error } = await sb.from('randevular').update(v).eq('id', eid));
-    } else {
-      ({ error } = await sb.from('randevular').insert([{
-        ...v, islem_suresi_dk: 60, personel_id: ben.id, durum: 'Aktif'
-      }]));
-    }
-    if (error) {
-      toast('Kayıt hatası: ' + error.message);
-      return;
-    }
-
-    // Mevcut Telegram bildirimi korunuyor.
-    bildir({ ...v, tarih: trTarih(tarih), saat }, eid ? 'guncelleme' : 'yeni');
-    $('tarih').value = tarih;
-    ilkKaydir = true;
-    kapat();
-    toast('Randevu kaydedildi');
-    await yukle();
-    await musterileriYukle();
-  } catch (e) {
-    toast('İşlem sırasında hata oluştu: ' + (e?.message || 'Bilinmeyen hata'));
-  } finally {
-    kayitDevamEdiyor = false;
-    buton.disabled = false;
-    buton.textContent = $('eid').value ? 'Değişiklikleri kaydet' : 'Randevuyu kaydet';
-  }
-};
-
-// Telegram token tarayıcıda yok: Edge Function üzerinden gönderilir
-function bildir(r, tur, neden) {
-  const tarih = r.tarih || trTarih(r.tarih_saat.slice(0, 10)), saat = r.saat || r.tarih_saat.slice(11, 16);
-  sb.functions.invoke('bildirim', { body: { ...r, tarih, saat, tur, iptal_nedeni: neden || '' } })
-    .then(async ({ data, error }) => {
-      if (error) {
-        let d = error.message;
-        try { d = await error.context.text(); } catch (e) {}
-        return toast('Bildirim hatası: ' + d);
-      }
-      if (data && data.ok === false) toast('Telegram hatası: ' + (data.aciklama || 'bilinmiyor'));
-    })
-    .catch(e => toast('Bildirim hatası: ' + e.message));
-}
-
-/* ---------- Arama ---------- */
-$('ara').onkeydown = async e => {
-  if (e.key !== 'Enter') return;
-  const k = $('ara').value.trim().replace(/[%,()]/g, '');
-  if (k.length < 2) return toast('En az 2 karakter girin');
-  const { data, error } = await sb.from('randevular').select('*').or(`musteri_adi.ilike.%${k}%,telefon.ilike.%${k}%`).order('tarih_saat', { ascending: false }).limit(30);
-  if (error) return toast('Arama başarısız');
-  const n = (data || []).map(r => {
-    const d = el('div', 'res', `${trTarih(r.tarih_saat.slice(0, 10))} ${r.tarih_saat.slice(11, 16)} • ${r.musteri_adi} • ${r.hizmet}${r.durum === 'İptal' ? ' (iptal)' : ''}`);
-    d.onclick = () => { $('tarih').value = r.tarih_saat.slice(0, 10); ilkKaydir = true; kapat(); yukle(); };
-    return d;
-  });
-  if (!n.length) n.push(el('div', 'info', 'Sonuç bulunamadı'));
-  sheet('Arama sonuçları', n);
-};
-
-// Her dakika "şimdi" çizgisini güncelle
-setInterval(() => { if ($('tarih').value === yerel() && ben) ciz(); }, 60000);
-sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') $('login').classList.remove('hidden'); });
-basla();
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-</script>
-</body>
-</html>
+  const { data } = await sb.from('randevular').select('musteri_adi,telefon').order('id', { ascending: false }).
