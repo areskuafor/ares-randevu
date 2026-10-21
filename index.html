@@ -200,7 +200,7 @@ const dk = s => { const [h, m] = s.split(':'); return +h * 60 + +m; };
 const trTarih = t => t.split('-').reverse().join('.');
 const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 3200); }
-// Başlangıç saati + süre (varsayılan 60 dk) geçtiyse randevu tamamlanmış sayılır
+
 const bitti = r => {
   if (r.durum === 'İptal') return false;
   const [y, m, d] = r.tarih_saat.slice(0, 10).split('-').map(Number), [h, mi] = r.tarih_saat.slice(11, 16).split(':').map(Number);
@@ -213,11 +213,16 @@ $('lform').onsubmit = async e => {
   e.preventDefault();
   const u = $('u').value.trim().toLowerCase(), p =$('p').value;
   if (!u || !p) return toast('Kullanıcı adı ve şifre girin');
+  
   const { error } = await sb.auth.signInWithPassword({ email: u + '@ares.app', password: p });
-  if (error) return toast('Hatalı kullanıcı adı veya şifre');
+  if (error) {
+    alert('Giriş başarısız: ' + error.message);
+    return toast('Hatalı kullanıcı adı veya şifre');
+  }
   $('p').value = '';
-  basla();
+  await basla();
 };
+
 $('cikis').onclick = async () => {
   if (!confirm('Çıkış yapmak istiyor musunuz?')) return;
   await sb.auth.signOut();
@@ -226,36 +231,55 @@ $('cikis').onclick = async () => {
 };
 
 async function basla() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return $('login').classList.remove('hidden');
-  const { data, error } = await sb.from('personeller').select('id,ad_soyad,rol,auth_id');
-  if (error) return toast('Personel listesi alınamadı');
-  personel = data || [];
-  ben = personel.find(p => p.auth_id === session.user.id);
-  if (!ben) { await sb.auth.signOut(); return toast('Hesabınız personel listesine bağlı değil'); }
+  const { data: { session }, error: sessErr } = await sb.auth.getSession();
+  if (sessErr || !session) return $('login').classList.remove('hidden');
 
-  // Personel giriş yaptıysa veritabanına log düşer (Her tarayıcı oturumu için 1 kez)
+  const { data, error } = await sb.from('personeller').select('*');
+  if (error) {
+    alert('Personeller tablosu okunamadı: ' + error.message);
+    return toast('Personel listesi alınamadı');
+  }
+  
+  personel = data || [];
+  
+  // UUID esnek eşleştirme
+  ben = personel.find(p => p.auth_id && String(p.auth_id).toLowerCase() === String(session.user.id).toLowerCase());
+
+  if (!ben) {
+    alert('DİKKAT: Giriş yapan hesabın UID kodu (' + session.user.id + ') personeller tablosundaki auth_id alanıyla eşleşmiyor!');
+    await sb.auth.signOut();
+    return toast('Hesabınız personel listesine bağlı değil');
+  }
+
+  // Personel giriş kaydı oluşturma
   if (!sessionStorage.getItem('giris_yapildi_' + ben.id)) {
-    await sb.from('personel_giris_kayitlari').insert([{
-      personel_id: ben.id,
-      kullanici_adi: ben.ad_soyad,
-      olay: 'giris'
-    }]);
-    sessionStorage.setItem('giris_yapildi_' + ben.id, '1');
+    try {
+      await sb.from('personel_giris_kayitlari').insert([{
+        personel_id: ben.id,
+        kullanici_adi: ben.ad_soyad,
+        olay: 'giris'
+      }]);
+      sessionStorage.setItem('giris_yapildi_' + ben.id, '1');
+    } catch(err) {
+      console.log('Log kaydı atılamadı:', err);
+    }
   }
 
   $('login').classList.add('hidden');$('kim').textContent = ben.ad_soyad;
 
-  // Yönetici ise header tarafına Girişler butonunu ekler
   yoneticiButonlariniDuzenle();
 
   const f = $('filtre'), m =$('m_per');
   f.replaceChildren(new Option('Tüm personeller', ''));
   m.replaceChildren();
   personel.forEach(p => { f.add(new Option(p.ad_soyad, p.ad_soyad)); m.add(new Option(p.ad_soyad, p.ad_soyad)); });
-  musterileriYukle();
+  
+  await musterileriYukle();
   await yukle();
-  if (!kanal) kanal = sb.channel('canli').on('postgres_changes', { event: '*', schema: 'public', table: 'randevular' }, () => yukle()).subscribe();
+  
+  if (!kanal) {
+    kanal = sb.channel('canli').on('postgres_changes', { event: '*', schema: 'public', table: 'randevular' }, () => yukle()).subscribe();
+  }
 }
 
 function yoneticiButonlariniDuzenle() {
@@ -318,4 +342,113 @@ async function yukle() {
 }
 
 async function musterileriYukle() {
-  const { data } = await sb.from('randevular').select('musteri_adi,telefon').order('id', { ascending: false }).
+  const { data } = await sb.from('randevular').select('musteri_adi,telefon').order('id', { ascending: false });
+  if (data) {
+    const datalist = $('musteriler');
+    datalist.replaceChildren();
+    const eklendi = new Set();
+    data.forEach(m => {
+      if (m.musteri_adi && !eklendi.has(m.musteri_adi)) {
+        eklendi.add(m.musteri_adi);
+        const opt = document.createElement('option');
+        opt.value = m.musteri_adi;
+        datalist.appendChild(opt);
+      }
+    });
+  }
+}
+
+function ciz() {
+  const board = $('board');
+  board.replaceChildren();
+  if (!rands) return;
+  
+  const seciliPer = $('filtre').value;
+  const gosterilecekler = seciliPer ? personel.filter(p => p.ad_soyad === seciliPer) : personel;
+
+  // Saat sütunu
+  const tcol = el('div', 'tcol');
+  tcol.appendChild(el('div', 'phead', 'Saat'));
+  for (let h = S0; h <= S1; h++) {
+    tcol.appendChild(el('div', 'tl', `${pad(h)}:00`));
+  }
+  board.appendChild(tcol);
+
+  // Personel sütunları
+  gosterilecekler.forEach((p, idx) => {
+    const pcol = el('div', 'pcol');
+    pcol.appendChild(el('div', 'phead', p.ad_soyad));
+    const pbody = el('div', 'pbody');
+    pbody.style.height = ((S1 - S0 + 1) * H) + 'px';
+
+    const perRands = rands.filter(r => String(r.personel_id) === String(p.id) || r.personel_adi === p.ad_soyad);
+    perRands.forEach(r => {
+      const saatStr = r.tarih_saat.slice(11, 16);
+      const basDk = dk(saatStr) - (S0 * 60);
+      if (basDk < 0) return;
+
+      const top = (basDk / 60) * H;
+      const height = ((r.islem_suresi_dk || 60) / 60) * H;
+
+      const ev = el('div', 'ev' + (r.durum === 'İptal' ? ' iptal' : '') + (bitti(r) ? ' bitti' : ''));
+      ev.style.top = top + 'px';
+      ev.style.height = height + 'px';
+      ev.style.borderLeftColor = RENK[idx % RENK.length];
+      ev.innerHTML = `<div class="t">${r.musteri_adi || 'Müşteri'}</div><div class="s">${saatStr} - ${r.islem || ''}</div>`;
+      ev.onclick = (e) => { e.stopPropagation(); randevuDetay(r); };
+      pbody.appendChild(ev);
+    });
+
+    pcol.appendChild(pbody);
+    board.appendChild(pcol);
+  });
+
+  $('ozet').textContent = `${rands.length} randevu`;
+}
+
+function randevuDetay(r) {
+  const icerik = [
+    el('div', 'info', `👤 Müşteri: ${r.musteri_adi}`),
+    el('div', 'info', `📞 Telefon: ${r.telefon || 'Belirtilmedi'}`),
+    el('div', 'info', `✂️ İşlem: ${r.islem || 'Belirtilmedi'}`),
+    el('div', 'info', `🕒 Saat: ${r.tarih_saat.slice(11, 16)} (${r.islem_suresi_dk || 60} dk)`),
+    el('div', 'info', `💰 Kapora: ${r.kapora || 0} ₺ ${r.kapora_odendi ? '(Ödendi)' : '(Ödenmedi)'}`),
+    el('div', 'info', `📝 Not: ${r.notlar || 'Yok'}`)
+  ];
+
+  if (yetkili(r) && r.durum !== 'İptal') {
+    const btnIptal = el('button', 'big red', 'Randevuyu İptal Et');
+    btnIptal.onclick = async () => {
+      if (!confirm('Bu randevuyu iptal etmek istediğinize emin misiniz?')) return;
+      const { error } = await sb.from('randevular').update({ durum: 'İptal' }).eq('id', r.id);
+      if (error) return toast('İptal edilemedi: ' + error.message);
+      sheetKapat();
+      yukle();
+    };
+    icerik.push(btnIptal);
+  }
+
+  sheet('Randevu Detayı', icerik);
+}
+
+function sheet(baslik, elemanlar) {
+  $('sBaslik').textContent = baslik;
+  const c = $('sIcerik');
+  c.replaceChildren();
+  elemanlar.forEach(e => c.appendChild(e));
+  $('ovSheet').classList.add('on');
+}
+
+function sheetKapat() {
+  $('ovSheet').classList.remove('on');
+}
+
+document.querySelectorAll('[data-kapat]').forEach(b => b.onclick = () => {
+  $('ovForm').classList.remove('on');$('ovSheet').classList.remove('on');
+});
+
+// Sayfa ilk yüklendiğinde oturumu kontrol et
+basla();
+</script>
+</body>
+</html>
