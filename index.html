@@ -579,7 +579,7 @@ function randevuDetay(r) {
     el('div', 'info', `👤 Müşteri: ${r.musteri_adi}`),
     el('div', 'info', `📞 Telefon: ${r.telefon || 'Belirtilmedi'}`),
     el('div', 'info', `✂️ İşlem: ${r.islem || 'Belirtilmedi'}`),
-    el('div', 'info', `🕒 Saat: ${r.tarih_saat.slice(11, 16)} (${r.islem_suresi_dk || 60} dk)`),
+    el('div', 'info', `🕒 Saat: ${r.tarih_saat.slice(11, 16)}`),
     el('div', 'info', `👤 Personel: ${r.personel_adi || 'Atanmadı'}`),
     el('div', 'info', `💰 Kapora: ${r.kapora || 0} ₺ ${r.kapora_odendi ? '(Ödendi)' : '(Ödenmedi)'}`),
     el('div', 'info', `📝 Not: ${r.notlar || 'Yok'}`)
