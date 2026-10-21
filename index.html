@@ -28,6 +28,7 @@ h1{font-size:18px;color:var(--acc)}
 .hr{display:flex;align-items:center;gap:8px}
 .badge{font-size:12px;color:#f3d99f;border:1px solid rgba(216,179,106,.32);background:rgba(216,179,106,.12);padding:6px 11px;border-radius:20px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn-out{background:rgba(166,31,38,.18);color:#ffb5b5;border:1px solid rgba(214,70,76,.55);padding:7px 10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-gold-sm{background:var(--gold);color:#171109;border:1px solid #f1d99b;padding:7px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
 .ctl{background:#11100e;border-bottom:1px solid var(--bd);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .row{display:flex;gap:6px;align-items:center;justify-content:space-between}
 .ctl input,.ctl select,.nav{border:1px solid #51432c;background:#1b1915;color:var(--tx);padding:8px;border-radius:8px;font-size:13px;font-weight:600;min-width:0}
@@ -134,7 +135,11 @@ header{padding:10px 12px}
 
 <header>
   <h1>Ares Kuaför</h1>
-  <div class="hr"><div class="badge" id="kim"></div><button class="btn-out" id="cikis">Çıkış</button></div>
+  <div class="hr">
+    <div class="badge" id="kim"></div>
+    <div id="yoneticiAlan"></div>
+    <button class="btn-out" id="cikis">Çıkış</button>
+  </div>
 </header>
 
 <div class="ctl">
@@ -157,6 +162,20 @@ header{padding:10px 12px}
 </div>
 
 <div id="board"></div>
+
+<!-- Yeni Personel Ekleme Penceresi -->
+<div class="ov" id="ovPersonel"><div class="card">
+  <div class="mh"><h3>Yeni Personel Ekle</h3><button class="x" data-kapat aria-label="Kapat">&times;</button></div>
+  <div class="f"><label for="p_ad">Ad Soyad</label><input id="p_ad" placeholder="Örn: Ayşe Yılmaz"></div>
+  <div class="f"><label for="p_rol">Rol</label>
+    <select id="p_rol">
+      <option value="personel">Personel</option>
+      <option value="yonetici">Yönetici</option>
+    </select>
+  </div>
+  <div class="f"><label for="p_tel">Telefon</label><input id="p_tel" type="tel" placeholder="05xx xxx xx xx"></div>
+  <button class="big" id="btnPersonelKaydet">Personeli Kaydet</button>
+</div></div>
 
 <!-- Randevu formu -->
 <div class="ov" id="ovForm"><div class="card">
@@ -283,7 +302,18 @@ async function basla() {
 }
 
 function yoneticiButonlariniDuzenle() {
+  const alan = $('yoneticiAlan');
+  alan.replaceChildren();
+
   if (ben.rol !== 'yonetici') return;
+
+  // Personel Ekle Butonu
+  const btnEkle = el('button', 'btn-gold-sm', '+ Personel');
+  btnEkle.style.marginRight = '6px';
+  btnEkle.onclick = () => $('ovPersonel').classList.add('on');
+  alan.appendChild(btnEkle);
+
+  // Girişler Butonu
   if (!$('btnGirisler')) {
     const btn = document.createElement('button');
     btn.id = 'btnGirisler';
@@ -291,9 +321,33 @@ function yoneticiButonlariniDuzenle() {
     btn.textContent = 'Girişler';
     btn.style.marginRight = '6px';
     btn.onclick = personelGirisleriniGoster;
-    $('cikis').before(btn);
+    alan.appendChild(btn);
   }
 }
+
+/* ---------- Yeni Personel Kaydetme İşlevi ---------- */
+$('btnPersonelKaydet').onclick = async () => {
+  const ad = $('p_ad').value.trim();
+  const rol = $('p_rol').value;
+  const tel = $('p_tel').value.trim();
+
+  if (!ad) return toast('Lütfen personel adını girin');
+
+  const { error } = await sb.from('personeller').insert([{
+    ad_soyad: ad,
+    rol: rol,
+    telefon: tel
+  }]);
+
+  if (error) return toast('Personel eklenemedi: ' + error.message);
+
+  toast('Personel başarıyla eklendi!');
+  $('p_ad').value = '';
+  $('p_tel').value = '';$('ovPersonel').classList.remove('on');
+  
+  // Listeyi yenile
+  basla();
+};
 
 async function personelGirisleriniGoster() {
   if (ben.rol !== 'yonetici') return toast('Bu alanı sadece yöneticiler görebilir');
@@ -444,6 +498,7 @@ function sheetKapat() {
 }
 
 document.querySelectorAll('[data-kapat]').forEach(b => b.onclick = () => {
+  $('ovPersonel').classList.remove('on');
   $('ovForm').classList.remove('on');$('ovSheet').classList.remove('on');
 });
 
