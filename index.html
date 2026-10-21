@@ -226,12 +226,15 @@ $('cikis').onclick = async () => {
 
 async function basla() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) return $('login').classList.remove('hidden');
+  if (!session) return $('login').classList.add('hidden'); // DÜZELTME: Orijinal yapıda giriş ekranının açık kalması sağlandı
   const { data, error } = await sb.from('personeller').select('id,ad_soyad,rol,auth_id');
   if (error) return toast('Personel listesi alınamadı');
   personel = data || [];
   ben = personel.find(p => p.auth_id === session.user.id);
-  if (!ben) { await sb.auth.signOut(); return toast('Hesabınız personel listesine bağlı değil'); }
+  if (!ben) { 
+    $('login').classList.remove('hidden'); // Oturum yoksa veya eşleşmezse giriş ekranını göster
+    return; 
+  }
   $('login').classList.add('hidden');$('kim').textContent = ben.ad_soyad;
   const f = $('filtre'), m =$('m_per');
   f.replaceChildren(new Option('Tüm personeller', ''));
@@ -415,7 +418,6 @@ const wa = t => { let n = t.replace(/\D/g, ''); if (n.startsWith('0')) n = '9' +
 function islemAc(r) {
   const saat = r.tarih_saat.slice(11, 16), tarih = trTarih(r.tarih_saat.slice(0, 10));
   
-  // Süre bilgisi tamamen kaldırıldı:
   const n = [el('div', 'info', `${tarih} ${saat} • ${r.islem_yapan_personel || ''}${bitti(r) ? ' • Tamamlandı' : ''}`),
              el('div', 'info', `İşlem: ${r.hizmet}${r.telefon ? ' • ' + r.telefon : ''}${r.notlar ? ' • Not: ' + r.notlar : ''}`)];
 
