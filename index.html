@@ -97,8 +97,8 @@ h1{font-size:18px;color:var(--acc)}
 .big{display:block;width:100%;text-align:center;text-decoration:none;background:var(--gold);color:#171109;border:1px solid #f1d99b;padding:12px;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;margin-top:9px}
 .big.alt{background:#211d16;color:var(--acc);border-color:#51432c}
 .big.red{background:rgba(166,31,38,.25);color:#ffb5b5;border-color:rgba(214,70,76,.55)}
+.big.wa{background:#128C7E;color:#fff;border-color:#25D366}
 .info{font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:6px}
-.res{padding:11px;border:1px solid var(--bd);border-radius:9px;margin-bottom:7px;cursor:pointer;font-size:13px}
 #login{position:fixed;inset:0;z-index:100;display:flex;justify-content:center;align-items:center;padding:20px;background:radial-gradient(ellipse at 50% 20%,rgba(166,31,38,.22),transparent 48%),linear-gradient(145deg,#050505,#17130d)}
 .lbox{background:linear-gradient(155deg,#191714,#0d0d0d);padding:28px;border:1px solid rgba(216,179,106,.4);border-radius:18px;width:100%;max-width:380px}
 .lbox img{width:80px;height:80px;object-fit:cover;border-radius:50%;margin:0 auto 14px;display:block;border:2px solid var(--acc)}
@@ -132,7 +132,7 @@ header{padding:10px 12px}
   <div class="hr">
     <div class="badge" id="kim"></div>
     <div id="yoneticiAlan"></div>
-    <button class="btn-out" id="cikis">Çıkış</button>
+    <button class="btn-out" id="cikis" type="button">Çıkış</button>
   </div>
 </header>
 
@@ -140,10 +140,10 @@ header{padding:10px 12px}
   <div class="gun"><div id="gunTarih"></div><div id="gunAdi"></div></div>
   <div class="row">
     <div class="row" style="justify-content:flex-start">
-      <button class="nav" id="geri" aria-label="Önceki gün">&lt;</button>
+      <button class="nav" id="geri" type="button" aria-label="Önceki gün">&lt;</button>
       <input type="date" id="tarih" style="flex:1;min-width:0;max-width:170px">
-      <button class="nav" id="ileri" aria-label="Sonraki gün">&gt;</button>
-      <button class="today" id="bugun">Bugün</button>
+      <button class="nav" id="ileri" type="button" aria-label="Sonraki gün">&gt;</button>
+      <button class="today" id="bugun" type="button">Bugün</button>
     </div>
     <button class="add" id="yeni" type="button">+ Yeni randevu</button>
   </div>
@@ -159,7 +159,7 @@ header{padding:10px 12px}
 
 <!-- Yeni Personel Ekleme Penceresi -->
 <div class="ov" id="ovPersonel"><div class="card">
-  <div class="mh"><h3>Yeni Personel Ekle</h3><button class="x" data-kapat aria-label="Kapat">&times;</button></div>
+  <div class="mh"><h3>Yeni Personel Ekle</h3><button class="x" data-kapat type="button" aria-label="Kapat">&times;</button></div>
   <div class="f"><label for="p_ad">Kullanıcı Adı (Örn: ayse)</label><input id="p_ad" placeholder="küçük harfle yazın"></div>
   <div class="f"><label for="p_isim">Ad Soyad (Ekranda görünecek)</label><input id="p_isim" placeholder="Örn: Ayşe Yılmaz"></div>
   <div class="f"><label for="p_sifre">Giriş Şifresi</label><input id="p_sifre" type="password" placeholder="En az 6 karakter"></div>
@@ -175,7 +175,7 @@ header{padding:10px 12px}
 
 <!-- Randevu formu -->
 <div class="ov" id="ovForm"><div class="card">
-  <div class="mh"><h3 id="fBaslik">Yeni randevu</h3><button class="x" data-kapat aria-label="Kapat">&times;</button></div>
+  <div class="mh"><h3 id="fBaslik">Yeni randevu</h3><button class="x" data-kapat type="button" aria-label="Kapat">&times;</button></div>
   <input type="hidden" id="eid">
   <div class="f"><label for="m_tarih">Tarih</label><input type="date" id="m_tarih"></div>
   <div class="f"><label for="m_adi">Müşteri adı soyadı</label><input id="m_adi" list="musteriler" autocomplete="off"><datalist id="musteriler"></datalist></div>
@@ -195,7 +195,7 @@ header{padding:10px 12px}
 
 <!-- İşlem penceresi ve arama sonuçları -->
 <div class="ov" id="ovSheet"><div class="card">
-  <div class="mh"><h3 id="sBaslik"></h3><button class="x" data-kapat aria-label="Kapat">&times;</button></div>
+  <div class="mh"><h3 id="sBaslik"></h3><button class="x" data-kapat type="button" aria-label="Kapat">&times;</button></div>
   <div id="sIcerik"></div>
 </div></div>
 
@@ -206,7 +206,7 @@ header{padding:10px 12px}
 const sb = supabase.createClient('https://pomcbxgouhfvpdgwyepq.supabase.co', 'sb_publishable_kpfQg9YJAh28CTTJxKgsEw_JP3Nqz-f');
 const S0 = 8, S1 = 21, H = 70;
 const RENK = ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'];
-let ben = null, personel = [], rands = [], musteriMap = {}, kanal = null;
+let ben = null, personel = [], rands = [], kanal = null;
 
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
@@ -220,7 +220,7 @@ const bitti = r => {
   const [y, m, d] = r.tarih_saat.slice(0, 10).split('-').map(Number), [h, mi] = r.tarih_saat.slice(11, 16).split(':').map(Number);
   return new Date(y, m - 1, d, h, mi + (r.islem_suresi_dk || 60)) <= new Date();
 };
-const yetkili = r => ben && (ben.rol === 'yonetici' || String(r.personel_id) === String(ben.id));
+const yetkili = () => ben && ben.rol === 'yonetici';
 
 /* ---------- Giriş / çıkış (Supabase Auth) ---------- */
 $('lform').onsubmit = async e => {
@@ -280,7 +280,6 @@ async function basla() {
 
   yoneticiButonlariniDuzenle();
 
-  // Filtre ve Form Personel Seçim Menülerini Doldur
   const f = $('filtre'), m =$('m_per');
   f.replaceChildren(new Option('Tüm personeller', ''));
   m.replaceChildren();
@@ -360,27 +359,37 @@ $('btnPersonelKaydet').onclick = async () => {
   basla();
 };
 
-/* ---------- Randevu Ekleme Formu Açma ---------- */
-function yeniRandevuAc() {
-  $('eid').value = '';$('fBaslik').textContent = 'Yeni randevu';
-  $('m_tarih').value =$('tarih').value;
-  $('m_adi').value = '';
-  $('m_tel').value = '';$('hizTxt').textContent = 'Yapılacak işlemi seçin';
-  $('hizBtn').classList.add('bos-sec');
-  $('chips').classList.add('hidden');$('m_diger').classList.add('hidden');
-  $('m_diger').value = '';$('m_saat').value = '';
-  $('m_kap').value = '0';$('m_odendi').checked = false;
-  $('m_not').value = '';$('ovForm').classList.add('on');
+/* ---------- Randevu Ekleme / Düzenleme Formu ---------- */
+function yeniRandevuAc(r = null) {
+  $('eid').value = r ? r.id : '';
+  $('fBaslik').textContent = r ? 'Randevuyu Düzenle' : 'Yeni randevu';
+  $('m_tarih').value = r ? r.tarih_saat.slice(0, 10) : $('tarih').value;
+  $('m_adi').value = r ? r.musteri_adi : '';
+  $('m_tel').value = r ? (r.telefon || '') : '';
+  
+  const hiz = r ? (r.islem || '') : '';
+  $('hizTxt').textContent = hiz || 'Yapılacak işlemi seçin';
+  if (hiz) $('hizBtn').classList.remove('bos-sec'); else $('hizBtn').classList.add('bos-sec');$('chips').classList.add('hidden');
+  $('m_diger').classList.add('hidden');$('m_diger').value = '';
+  
+  if (r && r.personel_adi) {
+    $('m_per').value = r.personel_adi;
+  }
+  
+  $('m_saat').value = r ? r.tarih_saat.slice(11, 16) : '';
+  $('m_kap').value = r ? (r.kapora || 0) : '0';
+  $('m_odendi').checked = r ? !!r.kapora_odendi : false;
+  $('m_not').value = r ? (r.notlar || '') : '';
+  $('ovForm').classList.add('on');
 }
 
-$('yeni').onclick = yeniRandevuAc;
-$('fab').onclick = yeniRandevuAc;
+$('yeni').onclick = () => yeniRandevuAc();$('fab').onclick = () => yeniRandevuAc();
 
 $('hizBtn').onclick = () => {
   const chips = $('chips');
   chips.classList.toggle('hidden');
   if (!chips.hasChildNodes()) {
-    ['Saç Kesimi', 'Fön', 'Renklendirme (Boya)', 'Ombre / Balyaj', 'Keratin Bakım', 'Mikro Kaynak', 'Gelin Saçı', 'Manikür / Pedikür'].forEach(h => {
+    ['Saç Kesimi', 'Fön', 'Renklendirme (Boya)', 'Ombre / Balyaj', 'Keratin Bakım', 'Mikro Kaynak', 'Gelin Saçı', 'Manikür / Pedikür', 'Diğer'].forEach(h => {
       const c = el('div', 'chip', h);
       c.onclick = () => {
         $('hizTxt').textContent = h;
@@ -399,7 +408,9 @@ $('kaydet').onclick = async () => {
   const tel = $('m_tel').value.trim();
   const perAd = $('m_per').value;
   const saat = $('m_saat').value;
-  const hiz = $('hizTxt').textContent === 'Yapılacak işlemi seçin' ? '' : $('hizTxt').textContent;
+  let hiz = $('hizTxt').textContent;
+  if (hiz === 'Yapılacak işlemi seçin') hiz = '';
+  if (hiz === 'Diğer') hiz = $('m_diger').value.trim();
   const kapora = +$('m_kap').value || 0;
   const odendi = $('m_odendi').checked;
   const notlar = $('m_not').value.trim();
@@ -439,7 +450,7 @@ $('kaydet').onclick = async () => {
 };
 
 async function personelGirisleriniGoster() {
-  if (ben.rol !== 'yonetici') return toast('Bu alanı sadece yöneticiler görebilir');
+  if (yetkili() === false) return toast('Bu alanı sadece yöneticiler görebilir');
   
   const { data, error } = await sb.from('personel_giris_kayitlari').select('*').order('zaman', { ascending: false }).limit(50);
   if (error) return toast('Kayıtlar yüklenemedi: ' + error.message);
@@ -574,7 +585,27 @@ function randevuDetay(r) {
     el('div', 'info', `📝 Not: ${r.notlar || 'Yok'}`)
   ];
 
-  if (yetkili(r) && r.durum !== 'İptal') {
+  if (r.telefon) {
+    const temizTel = r.telefon.replace(/\D/g, '');
+    const tarihStr = r.tarih_saat.slice(0, 10).split('-').reverse().join('.');
+    const saatStr = r.tarih_saat.slice(11, 16);
+    const mesaj = encodeURIComponent(`Merhaba ${r.musteri_adi}, Ares Kuaför randevunuz ${tarihStr} tarihinde saat ${saatStr} için planlanmıştır. Görüşmek üzere!`);
+    
+    const btnWa = el('a', 'big wa', '💬 WhatsApp ile Hatırlat');
+    btnWa.href = `https://wa.me/90${temizTel.replace(/^0/, '')}?text=${mesaj}`;
+    btnWa.target = '_blank';
+    icerik.push(btnWa);
+  }
+
+  if (r.durum !== 'İptal') {
+    const btnDuzenle = el('button', 'big alt', 'Randevuyu Düzenle');
+    btnDuzenle.type = 'button';
+    btnDuzenle.onclick = () => {
+      sheetKapat();
+      yeniRandevuAc(r);
+    };
+    icerik.push(btnDuzenle);
+
     const btnIptal = el('button', 'big red', 'Randevuyu İptal Et');
     btnIptal.type = 'button';
     btnIptal.onclick = async () => {
