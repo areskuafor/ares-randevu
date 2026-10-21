@@ -451,8 +451,13 @@ async function durumDegis(r, durum, neden) {
   kapat(); toast(durum === 'İptal' ? 'Randevu iptal edildi' : 'Randevu geri alındı'); yukle();
 }
 
-/* ---------- Kaydet (önce kayıt, sonra bildirim) ---------- */
+/* ---------- Kaydet: aynı anda çift tıklamayı engelle ---------- */
+let kayitDevamEdiyor = false;
+
 $('kaydet').onclick = async () => {
+  // İlk istek bitmeden gelen ikinci tıklamayı yok say.
+  if (kayitDevamEdiyor) return;
+
   const eid = $('eid').value, tarih = $('m_tarih').value;
   const v = {
     musteri_adi: $('m_adi').value.trim(), telefon: $('m_tel').value.trim(), hizmet: hizmetAl(),
@@ -460,17 +465,46 @@ $('kaydet').onclick = async () => {
     kapora: +$('m_kap').value || 0, kapora_odendi: $('m_odendi').checked, notlar: $('m_not').value.trim()
   };
   const saat = $('m_saat').value;
-  if (!v.musteri_adi || !v.hizmet || !saat || !tarih) return toast('Müşteri adı, işlem, tarih ve saat zorunludur');
+  if (!v.musteri_adi || !v.hizmet || !saat || !tarih) {
+    return toast('Müşteri adı, işlem, tarih ve saat zorunludur');
+  }
   v.tarih_saat = `${tarih}T${saat}:00`;
 
-  let error;
-  if (eid) ({ error } = await sb.from('randevular').update(v).eq('id', eid));
-  else ({ error } = await sb.from('randevular').insert([{ ...v, islem_suresi_dk: 60, personel_id: ben.id, durum: 'Aktif' }]));
-  if (error) return toast('Kayıt hatası: ' + error.message);
+  const buton = $('kaydet');
+  const eskiYazi = buton.textContent;
+  kayitDevamEdiyor = true;
+  buton.disabled = true;
+  buton.textContent = 'Kaydediliyor...';
 
-  bildir({ ...v, tarih: trTarih(tarih), saat }, eid ? 'guncelleme' : 'yeni');
-  $('tarih').value = tarih; ilkKaydir = true;
-  kapat(); toast('Randevu kaydedildi'); yukle(); musterileriYukle();
+  try {
+    let error;
+    if (eid) {
+      ({ error } = await sb.from('randevular').update(v).eq('id', eid));
+    } else {
+      ({ error } = await sb.from('randevular').insert([{
+        ...v, islem_suresi_dk: 60, personel_id: ben.id, durum: 'Aktif'
+      }]));
+    }
+    if (error) {
+      toast('Kayıt hatası: ' + error.message);
+      return;
+    }
+
+    // Mevcut Telegram bildirimi korunuyor.
+    bildir({ ...v, tarih: trTarih(tarih), saat }, eid ? 'guncelleme' : 'yeni');
+    $('tarih').value = tarih;
+    ilkKaydir = true;
+    kapat();
+    toast('Randevu kaydedildi');
+    await yukle();
+    await musterileriYukle();
+  } catch (e) {
+    toast('İşlem sırasında hata oluştu: ' + (e?.message || 'Bilinmeyen hata'));
+  } finally {
+    kayitDevamEdiyor = false;
+    buton.disabled = false;
+    buton.textContent = $('eid').value ? 'Değişiklikleri kaydet' : 'Randevuyu kaydet';
+  }
 };
 
 // Telegram token tarayıcıda yok: Edge Function üzerinden gönderilir
