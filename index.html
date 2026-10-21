@@ -42,7 +42,8 @@ h1{font-size:18px;color:var(--acc)}
 .chk{font-size:12px;color:var(--mut);display:flex;gap:5px;align-items:center;white-space:nowrap}
 .chk input{width:auto}
 #ara{flex:1}
-/* Çizelge: her personel ayrı sütun */
+
+/* Masaüstü Çizelge */
 #board{flex:1;min-height:0;overflow:auto;display:flex;background:#0c0c0c;position:relative}
 .tcol{position:sticky;left:0;z-index:3;width:52px;min-width:52px;background:#141310;border-right:1px solid #30291e}
 .pcol{flex:1;min-width:150px;border-right:1px solid #28241d}
@@ -54,19 +55,21 @@ h1{font-size:18px;color:var(--acc)}
 .ev .t{font-size:12px;font-weight:700;color:#f5d995;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev .s{font-size:10px;color:#d2c9b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev.iptal{opacity:.45;text-decoration:line-through}
-.liste{flex:1;min-width:0;padding:10px 10px 96px;display:flex;flex-direction:column;gap:8px;align-content:flex-start}
+
+/* Mobil Liste Görünümü */
+.liste{flex:1;min-width:0;padding:10px 12px 96px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
 .li{display:flex;gap:12px;align-items:flex-start;background:linear-gradient(110deg,#211d16,#171512);border:1px solid #4b3b23;border-left:5px solid var(--acc);border-radius:10px;padding:12px;cursor:pointer}
 .li.iptal{opacity:.45;text-decoration:line-through}
-.ls{font-size:18px;font-weight:700;color:#f5d995;min-width:54px}
+.ls{font-size:16px;font-weight:700;color:#f5d995;min-width:48px}
 .lg{min-width:0;flex:1}
-.lt{font-size:15px;font-weight:700;overflow-wrap:anywhere}
-.lh{font-size:13px;color:#d2c9b8;margin-top:3px;overflow-wrap:anywhere}
-.lp{font-size:12px;font-weight:700;margin-top:5px}
+.lt{font-size:14px;font-weight:700;overflow-wrap:anywhere;color:var(--tx)}
+.lh{font-size:12px;color:#d2c9b8;margin-top:3px;overflow-wrap:anywhere}
+.lp{font-size:11px;font-weight:700;margin-top:4px;color:var(--acc)}
 .bos{text-align:center;color:var(--mut);padding:48px 16px;white-space:pre-line;font-size:14px;line-height:1.6}
+
 .ev.bitti,.li.bitti{background:linear-gradient(110deg,#17211a,#121512);border-color:#2f4a36;opacity:.75}
 .ev.bitti .t,.li.bitti .ls{color:#9bd3a8}
-.lb{font-size:12px;font-weight:700;color:#7fc592;margin-top:4px}
-.now{position:absolute;left:0;right:0;height:2px;background:#e5484d;z-index:1;pointer-events:none}
+
 /* Pencereler */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:50;display:flex;justify-content:center;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
 .ov.on{opacity:1;pointer-events:auto}
@@ -110,13 +113,6 @@ header{padding:10px 12px}
 #yeni{display:none}
 .fab{display:flex}
 .row{flex-wrap:wrap}
-.tcol{width:44px;min-width:44px}
-.pcol{flex:0 0 46vw;min-width:46vw}
-#board{scroll-snap-type:x proximity}
-.pcol{scroll-snap-align:start}
-.ev .t{font-size:13px}.ev .s{font-size:11px}
-.chip{padding:9px 13px;font-size:13px}
-.card{max-height:92dvh}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -212,13 +208,12 @@ header{padding:10px 12px}
 const sb = supabase.createClient('https://pomcbxgouhfvpdgwyepq.supabase.co', 'sb_publishable_kpfQg9YJAh28CTTJxKgsEw_JP3Nqz-f');
 const S0 = 8, S1 = 21, H = 70;
 const RENK = ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'];
-let ben = null, personel = [], rands = [], musteriMap = {}, ilkKaydir = true, kanal = null;
+let ben = null, personel = [], rands = [], musteriMap = {}, kanal = null;
 
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
 const yerel = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const dk = s => { const [h, m] = s.split(':'); return +h * 60 + +m; };
-const trTarih = t => t.split('-').reverse().join('.');
 const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 3200); }
 
@@ -235,7 +230,7 @@ $('lform').onsubmit = async e => {
   const u = $('u').value.trim().toLowerCase(), p =$('p').value;
   if (!u || !p) return toast('Kullanıcı adı ve şifre girin');
   
-  const { data, error } = await sb.auth.signInWithPassword({ email: u + '@ares.app', password: p });
+  const { error } = await sb.auth.signInWithPassword({ email: u + '@ares.app', password: p });
   if (error) {
     alert('Supabase Giriş Hatası: ' + error.message);
     return toast('Hatalı kullanıcı adı veya şifre');
@@ -262,7 +257,6 @@ async function basla() {
   }
   
   personel = data || [];
-  
   ben = personel.find(p => p.auth_id && String(p.auth_id).trim().toLowerCase() === String(session.user.id).trim().toLowerCase());
 
   if (!ben) {
@@ -323,7 +317,7 @@ function yoneticiButonlariniDuzenle() {
   }
 }
 
-/* ---------- Yeni Personel ve Şifre Kaydetme İşlevi ---------- */
+/* ---------- Yeni Personel Kaydetme ---------- */
 $('btnPersonelKaydet').onclick = async () => {
   const username = $('p_ad').value.trim().toLowerCase();
   const isim = $('p_isim').value.trim();
@@ -335,7 +329,6 @@ $('btnPersonelKaydet').onclick = async () => {
 
   const email = username + '@ares.app';
 
-  // 1. Supabase Auth tarafında kullanıcı oluşturma (signUp)
   const { data: authData, error: authError } = await sb.auth.signUp({
     email: email,
     password: sifre
@@ -346,7 +339,6 @@ $('btnPersonelKaydet').onclick = async () => {
   const newUserId = authData.user ? authData.user.id : null;
   if (!newUserId) return toast('Kullanıcı ID alınamadı');
 
-  // 2. personeller tablosuna auth_id eşleşmesiyle kayıt ekleme
   const { error: dbError } = await sb.from('personeller').insert([{
     ad_soyad: isim,
     rol: rol,
@@ -364,7 +356,7 @@ $('btnPersonelKaydet').onclick = async () => {
   basla();
 };
 
-/* ---------- Randevu Ekleme Butonları ve Form Tetikleyicileri ---------- */
+/* ---------- Randevu Ekleme Formu ---------- */
 function yeniRandevuAc() {
   $('eid').value = '';$('fBaslik').textContent = 'Yeni randevu';
   $('m_tarih').value =$('tarih').value;
@@ -380,7 +372,6 @@ function yeniRandevuAc() {
 $('yeni').onclick = yeniRandevuAc;
 $('fab').onclick = yeniRandevuAc;
 
-// Hizmet Seçim Menüsü Aç/Kapat
 $('hizBtn').onclick = () => {
   const chips = $('chips');
   chips.classList.toggle('hidden');
@@ -398,7 +389,6 @@ $('hizBtn').onclick = () => {
   }
 };
 
-// Randevu Kaydet Butonu
 $('kaydet').onclick = async () => {
   const tarih = $('m_tarih').value;
   const adi = $('m_adi').value.trim();
@@ -447,32 +437,20 @@ $('kaydet').onclick = async () => {
 async function personelGirisleriniGoster() {
   if (ben.rol !== 'yonetici') return toast('Bu alanı sadece yöneticiler görebilir');
   
-  const { data, error } = await sb.from('personel_giris_kayitlari')
-    .select('*')
-    .order('zaman', { ascending: false })
-    .limit(50);
-    
+  const { data, error } = await sb.from('personel_giris_kayitlari').select('*').order('zaman', { ascending: false }).limit(50);
   if (error) return toast('Kayıtlar yüklenemedi: ' + error.message);
   
-  const liste = (data || []).map(k => {
-    const tarihSaat = new Date(k.zaman).toLocaleString('tr-TR');
-    return el('div', 'info', `👤 ${k.kullanici_adi} — 🕒 ${tarihSaat}`);
-  });
-  
+  const liste = (data || []).map(k => el('div', 'info', `👤 ${k.kullanici_adi} — 🕒 ${new Date(k.zaman).toLocaleString('tr-TR')}`));
   if (!liste.length) liste.push(el('div', 'info', 'Henüz giriş kaydı bulunmuyor'));
-  
   sheet('Personel Giriş Geçmişi', liste);
 }
 
 /* ---------- Tarih gezinme ---------- */
-function gunDegis(n) { const [y, m, d] = $('tarih').value.split('-').map(Number);$('tarih').value = yerel(new Date(y, m - 1, d + n)); ilkKaydir = true; yukle(); }
-$('geri').onclick = () => gunDegis(-1);$('ileri').onclick = () => gunDegis(1);
-$('bugun').onclick = () => {$('tarih').value = yerel(); ilkKaydir = true; yukle(); };
-$('tarih').onchange = () => { ilkKaydir = true; yukle(); };$('filtre').onchange = ciz;
+function gunDegis(n) { const [y, m, d] = $('tarih').value.split('-').map(Number);$('tarih').value = yerel(new Date(y, m - 1, d + n)); yukle(); }$('geri').onclick = () => gunDegis(-1);$('ileri').onclick = () => gunDegis(1);$('bugun').onclick = () => {$('tarih').value = yerel(); yukle(); };$('tarih').onchange = yukle;
+$('filtre').onchange = ciz;
 $('iptalGoster').onchange = yukle;
 $('tarih').value = yerel();
 
-/* ---------- Veri ---------- */
 function gunYaz() {
   const [y, m, d] = $('tarih').value.split('-').map(Number), t = new Date(y, m - 1, d);$('gunTarih').textContent = t.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
   $('gunAdi').textContent = t.toLocaleDateString('tr-TR', { weekday: 'long' }) + ($('tarih').value === yerel() ? ' • Bugün' : '');
@@ -484,46 +462,56 @@ async function yukle() {
   const t = $('tarih').value;
   let q = sb.from('randevular').select('*').gte('tarih_saat', t + 'T00:00:00').lte('tarih_saat', t + 'T23:59:59').order('tarih_saat');
   if (!$('iptalGoster').checked) q = q.neq('durum', 'İptal');
-  const { data, error } = await q;
-  if (error) return toast('Randevular yüklenemedi: ' + error.message);
+  const { data } = await q;
   rands = data || [];
   ciz();
 }
 
-async function musterileriYukle() {
-  const { data } = await sb.from('randevular').select('musteri_adi,telefon').order('id', { ascending: false });
-  if (data) {
-    const datalist = $('musteriler');
-    datalist.replaceChildren();
-    const eklendi = new Set();
-    data.forEach(m => {
-      if (m.musteri_adi && !eklendi.has(m.musteri_adi)) {
-        eklendi.add(m.musteri_adi);
-        const opt = document.createElement('option');
-        opt.value = m.musteri_adi;
-        datalist.appendChild(opt);
-      }
-    });
-  }
-}
-
+/* ---------- Çizim (Mobilde Liste, Masada Sütun) ---------- */
 function ciz() {
   const board = $('board');
   board.replaceChildren();
   if (!rands) return;
   
   const seciliPer = $('filtre').value;
+  const isMobile = window.innerWidth <= 640;
+
+  // MOBİLDE TEK EKRAN LİSTE GÖRÜNÜMÜ
+  if (isMobile) {
+    const listWrap = el('div', 'liste');
+    const filtrelenmisRands = seciliPer ? rands.filter(r => r.personel_adi === seciliPer) : rands;
+
+    if (!filtrelenmisRands.length) {
+      listWrap.appendChild(el('div', 'bos', 'Bu güne ait randevu bulunmuyor.'));
+    } else {
+      filtrelenmisRands.forEach(r => {
+        const saatStr = r.tarih_saat.slice(11, 16);
+        const li = el('div', 'li' + (r.durum === 'İptal' ? ' iptal' : '') + (bitti(r) ? ' bitti' : ''));
+        li.innerHTML = `
+          <div class="ls">${saatStr}</div>
+          <div class="lg">
+            <div class="lt">${r.musteri_adi || 'Müşteri'}</div>
+            <div class="lh">✂️ ${r.islem || 'Belirtilmedi'} &nbsp;•&nbsp; 📞 ${r.telefon || 'Yok'}</div>
+            <div class="lp">👤 ${r.personel_adi || 'Atanmadı'}</div>
+          </div>
+        `;
+        li.onclick = () => randevuDetay(r);
+        listWrap.appendChild(li);
+      });
+    }
+    board.appendChild(listWrap);
+    $('ozet').textContent = `${rands.length} randevu`;
+    return;
+  }
+
+  // MASAÜSTÜNDE SÜTUNLU ÇİZELGE GÖRÜNÜMÜ
   const gosterilecekler = seciliPer ? personel.filter(p => p.ad_soyad === seciliPer) : personel;
 
-  // Saat sütunu
   const tcol = el('div', 'tcol');
   tcol.appendChild(el('div', 'phead', 'Saat'));
-  for (let h = S0; h <= S1; h++) {
-    tcol.appendChild(el('div', 'tl', `${pad(h)}:00`));
-  }
+  for (let h = S0; h <= S1; h++) tcol.appendChild(el('div', 'tl', `${pad(h)}:00`));
   board.appendChild(tcol);
 
-  // Personel sütunları
   gosterilecekler.forEach((p, idx) => {
     const pcol = el('div', 'pcol');
     pcol.appendChild(el('div', 'phead', p.ad_soyad));
@@ -561,6 +549,7 @@ function randevuDetay(r) {
     el('div', 'info', `📞 Telefon: ${r.telefon || 'Belirtilmedi'}`),
     el('div', 'info', `✂️ İşlem: ${r.islem || 'Belirtilmedi'}`),
     el('div', 'info', `🕒 Saat: ${r.tarih_saat.slice(11, 16)} (${r.islem_suresi_dk || 60} dk)`),
+    el('div', 'info', `👤 Personel: ${r.personel_adi || 'Atanmadı'}`),
     el('div', 'info', `💰 Kapora: ${r.kapora || 0} ₺ ${r.kapora_odendi ? '(Ödendi)' : '(Ödenmedi)'}`),
     el('div', 'info', `📝 Not: ${r.notlar || 'Yok'}`)
   ];
@@ -597,7 +586,6 @@ document.querySelectorAll('[data-kapat]').forEach(b => b.onclick = () => {
   $('ovForm').classList.remove('on');$('ovSheet').classList.remove('on');
 });
 
-// Sayfa ilk yüklendiğinde oturumu kontrol et
 basla();
 </script>
 </body>
