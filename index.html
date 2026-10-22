@@ -46,8 +46,9 @@ h1{font-size:18px;color:var(--acc)}
 #ara{flex:1}
 /* Çizelge: her personel ayrı sütun */
 #board{flex:1;min-height:0;overflow:auto;display:flex;background:#0c0c0c;position:relative}
+#board{scrollbar-width:thin;scrollbar-color:#51432c #0c0c0c}
 .tcol{position:sticky;left:0;z-index:3;width:52px;min-width:52px;background:#141310;border-right:1px solid #30291e}
-.pcol{flex:1;min-width:150px;border-right:1px solid #28241d}
+.pcol{flex:1;min-width:110px;border-right:1px solid #28241d}
 .phead{position:sticky;top:0;z-index:2;height:34px;display:flex;align-items:center;justify-content:center;background:#141310;border-bottom:1px solid var(--bd);font-size:12px;font-weight:700;padding:0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .tcol .phead{z-index:4}
 .tl{height:70px;border-bottom:1px solid #28241d;font-size:10px;font-weight:600;color:#c7b994;display:flex;justify-content:center;padding-top:8px}
