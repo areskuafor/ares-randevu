@@ -28,6 +28,9 @@ h1{font-size:18px;color:var(--acc)}
 .hr{display:flex;align-items:center;gap:8px}
 .badge{font-size:12px;color:#f3d99f;border:1px solid rgba(216,179,106,.32);background:rgba(216,179,106,.12);padding:6px 11px;border-radius:20px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn-out{background:rgba(166,31,38,.18);color:#ffb5b5;border:1px solid rgba(214,70,76,.55);padding:7px 10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-menu{background:rgba(216,179,106,.14);color:var(--acc);border:1px solid rgba(216,179,106,.45);padding:6px 10px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
+.gir{display:flex;justify-content:space-between;gap:8px;padding:10px;border:1px solid var(--bd);border-radius:9px;margin-bottom:7px;font-size:13px}
+.gir span:last-child{color:var(--mut);white-space:nowrap}
 .ctl{background:#11100e;border-bottom:1px solid var(--bd);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .row{display:flex;gap:6px;align-items:center;justify-content:space-between}
 .ctl input,.ctl select,.nav{border:1px solid #51432c;background:#1b1915;color:var(--tx);padding:8px;border-radius:8px;font-size:13px;font-weight:600;min-width:0}
@@ -134,7 +137,7 @@ header{padding:10px 12px}
 
 <header>
   <h1>Ares Kuaför</h1>
-  <div class="hr"><div class="badge" id="kim"></div><button class="btn-out" id="cikis">Çıkış</button></div>
+  <div class="hr"><div class="badge" id="kim"></div><button class="btn-menu hidden" id="menu" aria-label="Menü">☰</button><button class="btn-out" id="cikis">Çıkış</button></div>
 </header>
 
 <div class="ctl">
@@ -192,6 +195,7 @@ const sb = supabase.createClient('https://pomcbxgouhfvpdgwyepq.supabase.co', 'sb
 const S0 = 8, S1 = 21, H = 70;
 const RENK = ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'];
 let ben = null, personel = [], rands = [], musteriMap = {}, ilkKaydir = true, kanal = null;
+let yukleNo = 0, animYon = 0; // yukleNo: eski yanıtın yeni günü ezmesini engeller, animYon: gün geçiş animasyonu yönü
 
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
@@ -235,6 +239,8 @@ async function basla() {
   if (!ben) { await sb.auth.signOut(); return toast('Hesabınız personel listesine bağlı değil'); }
   $('login').classList.add('hidden');
   $('kim').textContent = ben.ad_soyad;
+  $('menu').classList.toggle('hidden', ben.rol !== 'yonetici');
+  girisKaydet();
   const f = $('filtre'), m = $('m_per');
   f.replaceChildren(new Option('Tüm personeller', ''));
   m.replaceChildren();
@@ -245,7 +251,7 @@ async function basla() {
 }
 
 /* ---------- Tarih gezinme ---------- */
-function gunDegis(n) { const [y, m, d] = $('tarih').value.split('-').map(Number); $('tarih').value = yerel(new Date(y, m - 1, d + n)); ilkKaydir = true; yukle(); }
+function gunDegis(n) { const [y, m, d] = $('tarih').value.split('-').map(Number); $('tarih').value = yerel(new Date(y, m - 1, d + n)); ilkKaydir = true; animYon = n > 0 ? 1 : -1; yukle(); }
 $('geri').onclick = () => gunDegis(-1);
 $('ileri').onclick = () => gunDegis(1);
 $('bugun').onclick = () => { $('tarih').value = yerel(); ilkKaydir = true; yukle(); };
@@ -267,10 +273,16 @@ async function yukle() {
   const t = $('tarih').value;
   let q = sb.from('randevular').select('*').gte('tarih_saat', t + 'T00:00:00').lte('tarih_saat', t + 'T23:59:59').order('tarih_saat');
   if (!$('iptalGoster').checked) q = q.neq('durum', 'İptal');
+  const no = ++yukleNo;
   const { data, error } = await q;
+  if (no !== yukleNo) return; // daha yeni bir istek başladı, bu eski yanıtı yok say
   if (error) return toast('Randevular yüklenemedi: ' + error.message);
   rands = data || [];
   ciz();
+  if (animYon && !matchMedia('(prefers-reduced-motion:reduce)').matches) {
+    $('board').animate([{ transform: `translateX(${animYon * 40}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'ease-out' });
+  }
+  animYon = 0;
 }
 
 async function musterileriYukle() {
@@ -521,6 +533,22 @@ function bildir(r, tur, neden) {
     })
     .catch(e => toast('Bildirim hatası: ' + e.message));
 }
+
+/* ---------- Giriş kayıtları (sadece yönetici görür) ---------- */
+async function girisKaydet() {
+  try { await sb.from('giris_kayitlari').insert([{ personel_id: String(ben.id), ad_soyad: ben.ad_soyad }]); } catch (e) {}
+}
+$('menu').onclick = async () => {
+  const { data, error } = await sb.from('giris_kayitlari').select('ad_soyad,giris_zamani').order('giris_zamani', { ascending: false }).limit(100);
+  if (error) return toast('Girişler alınamadı: ' + error.message);
+  const n = (data || []).map(g => {
+    const d = el('div', 'gir');
+    d.append(el('span', null, g.ad_soyad), el('span', null, new Date(g.giris_zamani).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })));
+    return d;
+  });
+  if (!n.length) n.push(el('div', 'info', 'Henüz giriş kaydı yok'));
+  sheet('Girişler (son 100)', n);
+};
 
 /* ---------- Arama ---------- */
 $('ara').onkeydown = async e => {
