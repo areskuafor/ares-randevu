@@ -137,8 +137,8 @@ header{padding:10px 12px}
 </div>
 
 <header>
-  <h1>Ares Kuaför</h1>
-  <div class="hr"><div class="badge" id="kim"></div><button class="btn-menu hidden" id="menu" aria-label="Menü">☰</button><button class="btn-out" id="cikis">Çıkış</button></div>
+  <div class="hr"><button class="btn-menu hidden" id="menu" aria-label="Menü">☰</button><h1>Ares Kuaför</h1></div>
+  <div class="hr"><div class="badge" id="kim"></div><button class="btn-out" id="cikis">Çıkış</button></div>
 </header>
 
 <div class="ctl">
@@ -543,7 +543,7 @@ async function girisKaydet() {
   try { await sb.from('giris_kayitlari').insert([{ personel_id: String(ben.id), ad_soyad: ben.ad_soyad }]); } catch (e) {}
 }
 $('menu').onclick = async () => {
-  const { data, error } = await sb.from('giris_kayitlari').select('ad_soyad,giris_zamani').order('giris_zamani', { ascending: false }).limit(100);
+  const { data, error } = await sb.from('giris_kayitlari').select('ad_soyad,giris_zamani').neq('personel_id', String(ben.id)).order('giris_zamani', { ascending: false }).limit(100);
   if (error) return toast('Girişler alınamadı: ' + error.message);
   const n = (data || []).map(g => {
     const d = el('div', 'gir');
