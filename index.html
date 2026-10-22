@@ -308,7 +308,7 @@ function cizListe(f) {
     const ci = Math.max(0, personel.findIndex(p => p.ad_soyad === r.islem_yapan_personel)), renk = RENK[ci % RENK.length];
     const c = el('div', 'li' + (r.durum === 'İptal' ? ' iptal' : '') + (bitti(r) ? ' bitti' : '')); c.style.borderLeftColor = renk;
     const g = el('div', 'lg'), p = el('div', 'lp', r.islem_yapan_personel || ''); p.style.color = renk;
-    g.append(el('div', 'lt', r.musteri_adi), el('div', 'lh', r.hizmet + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')), p, ...(bitti(r) ? [el('div', 'lb', '✓ Tamamlandı')] : []));
+    g.append(el('div', 'lt', r.musteri_adi), el('div', 'lh', r.hizmet + (r.fiyat > 0 ? ` • ${r.fiyat}₺` : '') + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')), p, ...(bitti(r) ? [el('div', 'lb', '✓ Tamamlandı')] : []));
     c.append(el('div', 'ls', r.tarih_saat.slice(11, 16)), g);
     c.onclick = () => islemAc(r);
     w.appendChild(c);
@@ -348,7 +348,7 @@ function ciz() {
       const w = 100 / seritler.length;
       e.style.cssText = `top:${top}px;height:${Math.max(d / 60 * H - 2, 30)}px;border-left-color:${renk};left:calc(${yer.get(r) * w}% + 3px);right:auto;width:calc(${w}% - 6px)`;
       e.append(el('div', 't', (bitti(r) ? '✓ ' : '') + s + ' ' + r.musteri_adi),
-               el('div', 's', r.hizmet + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')));
+               el('div', 's', r.hizmet + (r.fiyat > 0 ? ` • ${r.fiyat}₺` : '') + (r.kapora > 0 ? ` • Kapora ${r.kapora}₺${r.kapora_odendi ? ' ✓' : ''}` : '')));
       e.onclick = ev => { ev.stopPropagation(); islemAc(r); };
       b.appendChild(e);
     });
@@ -438,7 +438,7 @@ const wa = t => { let n = t.replace(/\D/g, ''); if (n.startsWith('0')) n = '9' +
 function islemAc(r) {
   const saat = r.tarih_saat.slice(11, 16), tarih = trTarih(r.tarih_saat.slice(0, 10));
   const n = [el('div', 'info', `${tarih} ${saat} • ${r.islem_yapan_personel || ''}${bitti(r) ? ' • Tamamlandı' : ''}`),
-             el('div', 'info', `İşlem: ${r.hizmet}${r.telefon ? ' • ' + r.telefon : ''}${r.notlar ? ' • Not: ' + r.notlar : ''}`)];
+             el('div', 'info', `İşlem: ${r.hizmet}${r.fiyat > 0 ? ' • Fiyat: ' + r.fiyat + '₺' : ''}${r.telefon ? ' • ' + r.telefon : ''}${r.notlar ? ' • Not: ' + r.notlar : ''}`)];
   if (r.durum === 'İptal') {
     n.push(el('div', 'info', 'İptal nedeni: ' + (r.iptal_nedeni || 'belirtilmedi')));
     if (yetkili(r)) n.push(btn('İptali geri al', '', () => durumDegis(r, 'Aktif', null)));
